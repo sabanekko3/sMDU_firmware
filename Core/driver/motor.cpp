@@ -15,16 +15,59 @@ void MOTOR::init(void){
 	adc.dma_start();
 
 	//encoder reset
-	//enc.init();
+	enc.init();
 
-	//driver.out(0,0.2f);
-	HAL_Delay(500);
-//
-//	enc.read_start();
-//	HAL_Delay(100);
-//	while(!enc.is_available());
-//	enc.set_origin(enc.get_angle());
-//	HAL_Delay(100);
+	//encoder calibration///////////////
+	//move to origin
+	for(float f = 0; f<0.2f; f+=0.001f){
+		driver.out(0,f);
+		HAL_Delay(1);
+	}
+	driver.out(0,0.2f);
+	HAL_Delay(300);
+	enc.search_origin(0);
+
+	//turn foward 180deg
+	for(int i = 0; i < 0x1FF; i++){
+		driver.out(i,0.2f);
+		enc.calibrate(i);
+		HAL_Delay(1);
+	}
+	driver.out(0x200,0.2f);
+	HAL_Delay(300);
+	enc.search_origin(0x200);
+
+	//turn reverse 180deg
+	for(int i = 0x200; i >= 0; i--){
+		driver.out(i,0.2f);
+		enc.calibrate(i);
+		HAL_Delay(1);
+	}
+	driver.out(0,0.2f);
+	HAL_Delay(300);
+	enc.search_origin(0);
+
+	//turn reverse 180deg
+	for(int i = 0; i >= -0x200; i--){
+		driver.out(i,0.2f);
+		enc.calibrate(i);
+		HAL_Delay(1);
+	}
+	driver.out(0,0.2f);
+	HAL_Delay(300);
+	enc.search_origin(-0x200);
+
+	//turn foward 180deg
+	for(int i = -0x200; i < 0; i++){
+		driver.out(i,0.2f);
+		enc.calibrate(i);
+		HAL_Delay(1);
+	}
+	driver.out(0x200,0.2f);
+	HAL_Delay(300);
+	enc.search_origin(0);
+
+	enc.calc_param();
 }
 
 void MOTOR::print_debug(void){
@@ -46,9 +89,7 @@ PID pid_q(0.001f,0.001f,0);
 void MOTOR::control(void){
 	i_uvw = adc.get_i_uvw();
 
-	if(enc.is_available()){
-		angle_m = (enc.get_angle()%585)*7/4;
-	}
+
 	math.dq_from_uvw(i_uvw, angle_m, &i_dq);
 	v_dq.d = pid_d.compute(0.0f,i_dq.d);
 	v_dq.q =pid_q.compute(0.05f,i_dq.q);

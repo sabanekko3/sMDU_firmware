@@ -53,11 +53,15 @@ class AB_LINER{
 private:
 	ADC &adc;
 
+
 	float raw_to_regular=0;
 	uint16_t move_to_centor=0;
 public:
 	AB_LINER(ADC &_adc):adc(_adc){}
 	void set_param(uint16_t _min,uint16_t _max);
+	uint16_t get_raw(ADC_data sens){
+		return adc.get_raw(sens);
+	}
 	sincos_t get_sincos(void);
 };
 
@@ -74,10 +78,12 @@ private:
 	AB_LINER &ab_liner;
 	ENC_type type;
 
-	int origin;
+	int data[4] = {0};
+	int count = 0;
+	int origin = 0;
 public:
-	ENCODER(int _motor_pole,AS5600 &_as5600,AB_LINER &_ab_liner)
-	:motor_pole(_motor_pole),as5600(_as5600),ab_liner(_ab_liner){
+	ENCODER(int _motor_pole,motor_math &_math,AS5600 &_as5600,AB_LINER &_ab_liner)
+	:motor_pole(_motor_pole),math(_math),as5600(_as5600),ab_liner(_ab_liner){
 
 	}
 
@@ -86,16 +92,15 @@ public:
 	}
 	void init(void);
 	void calibrate(const int angle);
+	void search_origin(const int angle);
 	void calc_param(void);
 
-	float get_rad_speed(void);
 	int get_angle(void);
 
 	bool is_available(void);
 
 	void timer_interrupt_task(void);
 
-	int get_e_angle(void);
 	sincos_t get_e_sincos(void);
 };
 

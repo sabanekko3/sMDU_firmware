@@ -96,11 +96,13 @@ PWM U(&htim1, TIM_CHANNEL_3, 1000,-1,1,0.1);
 PWM V(&htim1, TIM_CHANNEL_2, 1000,-1,1,0.1);
 PWM W(&htim1, TIM_CHANNEL_1, 1000,-1,1,0.1);
 
-AS5600 enc(&hi2c1);
-
 DRIVER driver(U,V,W,MD_EN_GPIO_Port,MD_EN_Pin,mathlib);
 
 ADC adc(&hadc1,&hadc2,3.3/(0.1*4096.0),11.0/4096.0*3.3);
+
+AS5600 as5600_enc(&hi2c1);
+AB_LINER ab_liner_enc(adc);
+ENCODER enc(7,mathlib,as5600_enc,ab_liner_enc);
 
 MOTOR motor(driver,adc,mathlib,enc);
 

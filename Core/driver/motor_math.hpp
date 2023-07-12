@@ -15,8 +15,8 @@
 #define V_PHASE 341
 #define W_PHASE 683
 
-constexpr float angle_to_rad = TABLE_SIZE/(2*M_PI);
-constexpr float rad_to_angle = (2*M_PI)/TABLE_SIZE;
+constexpr float angle_to_rad = (2*M_PI)/TABLE_SIZE;
+constexpr float rad_to_angle = TABLE_SIZE/(2*M_PI);
 
 typedef struct dq{
 	float d;
@@ -69,7 +69,9 @@ public:
 	}
 
 	void dq_from_uvw(uvw_t input,uint16_t deg_e,dq_t *out);
+	void dq_from_uvw(uvw_t input,sincos_t param,dq_t *out);
 	void uvw_from_dq(dq_t input,uint16_t deg_e,uvw_t *out);
+	void uvw_from_dq(dq_t input,sincos_t param,uvw_t *out);
 };
 
 class PID{

@@ -61,9 +61,7 @@ void ENCODER::init(void){
 void ENCODER::calibrate(const int angle){
 	switch(type){
 	case ENC_type::AS5600:
-		if(angle == 0){
-
-		}
+		//nop
 		break;
 	case ENC_type::AS5048:
 		//as5048.init();
@@ -73,48 +71,48 @@ void ENCODER::calibrate(const int angle){
 	case ENC_type::UVW_HALL:
 		break;
 	case ENC_type::AB_LINER_HALL:
-		//ab_hall.init();
+		static int max = 0;
+		static int min = 0;
+		int h1 = ab_liner.get_raw(ADC_data::RBM_H1);
+		int h2 = ab_liner.get_raw(ADC_data::RBM_H2);
+
+		if(max < h1) max = h1;
+		if(max < h2) max = h2;
+
+		if(min > h1) min = h1;
+		if(min > h2) min = h2;
+
+		ab_liner.set_param(min, max);
 		break;
 	}
+}
+void ENCODER::search_origin(int angle){
+	switch(type){
+	case ENC_type::AS5600:
+		as5600.read_start();
+		while(!as5600.is_available());
+		data[count&0b11] = as5600.get_angle();
+		break;
+	case ENC_type::AS5048:
+		//as5048.init();
+		break;
+	case ENC_type::ABX:
+		break;
+	case ENC_type::UVW_HALL:
+		break;
+	case ENC_type::AB_LINER_HALL:
+//		float rad;
+//		arm_atan2_f32((float)ab_liner.get_raw(HALL_SENS::H1),(float)ab_liner.get_raw(HALL_SENS::H2),&rad);
+//		data[count&0b11]=(int)(rad*rad_to_angle);
+		break;
+	}
+	count ++;
 }
 void ENCODER::calc_param(void){
 
 }
 
-float ENCODER::get_rad_speed(void){
-	switch(type){
-	case ENC_type::AS5600:
-		as5600.init();
-		break;
-	case ENC_type::AS5048:
-		//as5048.init();
-		break;
-	case ENC_type::ABX:
-		break;
-	case ENC_type::UVW_HALL:
-		break;
-	case ENC_type::AB_LINER_HALL:
-		//ab_hall.init();
-		break;
-	}
-}
-float ENCODER::get_rad(void){
-	switch(type){
-	case ENC_type::AS5600:
-		as5600.init();
-		break;
-	case ENC_type::AS5048:
-		//as5048.init();
-		break;
-	case ENC_type::ABX:
-		break;
-	case ENC_type::UVW_HALL:
-		break;
-	case ENC_type::AB_LINER_HALL:
-		//ab_hall.init();
-		break;
-	}
-}
+
 bool ENCODER::is_available(void){
 	switch(type){
 	case ENC_type::AS5600:
@@ -128,7 +126,7 @@ bool ENCODER::is_available(void){
 	case ENC_type::UVW_HALL:
 		break;
 	case ENC_type::AB_LINER_HALL:
-		return ture;
+		return true;
 		break;
 	}
 	return false;
@@ -139,7 +137,6 @@ void ENCODER::timer_interrupt_task(void){
 		as5600.read_start();
 		break;
 	case ENC_type::AS5048:
-		//as5048.init();
 		break;
 	case ENC_type::ABX:
 		break;
@@ -151,43 +148,26 @@ void ENCODER::timer_interrupt_task(void){
 	}
 }
 
-int ENCODER::get_e_angle(void){
-	//e_angle = (data%(resol/pole))*(1024/(resol/pole))
-
-	switch(type){
-	case ENC_type::AS5600:
-		as5600.init();
-		break;
-	case ENC_type::AS5048:
-		//as5048.init();
-		break;
-	case ENC_type::ABX:
-		break;
-	case ENC_type::UVW_HALL:
-		break;
-	case ENC_type::AB_LINER_HALL:
-		//ab_hall.init();
-		break;
-	}
-}
 sincos_t ENCODER::get_e_sincos(void){
 	sincos_t data;
+	int angle = 0;
 	switch(type){
 	case ENC_type::AS5600:
-		int angle = as5600.get_angle()-origin;
+		angle = (as5600.get_angle()-origin)&0x3FF;
 		angle = ((angle*motor_pole*0x3FF/as5600.get_resolution())&0x3FF);
 		data.sin = math.sin_t(angle);
 		data.cos = math.cos_t(angle);
 		break;
+
 	case ENC_type::AS5048:
-		//as5048.init();
 		break;
 	case ENC_type::ABX:
 		break;
 	case ENC_type::UVW_HALL:
 		break;
 	case ENC_type::AB_LINER_HALL:
-		data = ab_liner.get_sincos();
+
+		//data = ab_liner.get_sincos();
 		break;
 	}
 
