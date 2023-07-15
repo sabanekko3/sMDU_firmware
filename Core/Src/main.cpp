@@ -186,14 +186,17 @@ int main(void)
   G.out(0.5);
 
   enc.select(ENC_type::AB_LINER_HALL);
-  motor.init();
-  //HAL_TIM_Base_Start_IT(&htim6);
-  //HAL_TIM_Base_Start_IT(&htim7);
+//  motor.init();
+//  HAL_TIM_Base_Start_IT(&htim6);
+//  HAL_TIM_Base_Start_IT(&htim7);
   G.out(0);
   R.out(0.5);
 
-  can_frame_t rx_data;
-
+  HAL_CAN_Start(&hcan);
+  HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
+  can.set_filter_free();
+  can_frame_t data;
+  printf("start\r\n");
 
   /* USER CODE END 2 */
 
@@ -205,18 +208,29 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-
+//
 //	  motor.print_debug();
 //	  HAL_Delay(1);
 
 	  if(can.rx_available()){
-		  can.rx(rx_data);
-		  printf("id:%d  ",rx_data.id);
+		  can.rx(data);
+		  printf("id:%x  ",data.id);
 		  for(uint32_t i = 0; i < 8; i++){
-			  printf("[%d]:%d ",rx_data.data[i]);
+			  printf("[%d]:%d ",i,data.data[i]);
 		  }
 		  printf("\r\n");
 	  }
+
+//	  data.data[0] = 0xAB;
+//	  data.data[1] = 0xCD;
+//
+//	  data.is_ext_id = false;
+//	  data.is_remote = false;
+//	  data.size  = 2;
+//
+//	  can.tx(data);
+//
+//	  HAL_Delay(500);
 
   }
   /* USER CODE END 3 */
@@ -440,11 +454,11 @@ static void MX_CAN_Init(void)
 
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN;
-  hcan.Init.Prescaler = 2;
+  hcan.Init.Prescaler = 4;
   hcan.Init.Mode = CAN_MODE_NORMAL;
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan.Init.TimeSeg1 = CAN_BS1_15TQ;
-  hcan.Init.TimeSeg2 = CAN_BS2_2TQ;
+  hcan.Init.TimeSeg1 = CAN_BS1_7TQ;
+  hcan.Init.TimeSeg2 = CAN_BS2_1TQ;
   hcan.Init.TimeTriggeredMode = DISABLE;
   hcan.Init.AutoBusOff = DISABLE;
   hcan.Init.AutoWakeUp = DISABLE;

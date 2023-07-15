@@ -56,10 +56,10 @@ void CAN_COM::rx_interrupt_task(void){
 	rx_buff[head].size = rx_header.DLC;
 	rx_buff[head].is_free = false;
 
-	head = (head + 1)&CAN_RX_BUFF_AND;
+	head = (head+1)&CAN_RX_BUFF_AND;
 }
 bool CAN_COM::rx(can_frame_t &rx_frame){
-	if(!rx_buff[head].is_free){
+	if(!rx_buff[tail].is_free){
 		rx_frame = rx_buff[tail];
 		rx_buff[tail].is_free = true;
 		tail = (tail+1)&CAN_RX_BUFF_AND;
