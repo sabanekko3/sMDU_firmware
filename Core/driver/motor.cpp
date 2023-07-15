@@ -27,43 +27,43 @@ void MOTOR::init(void){
 	HAL_Delay(300);
 	enc.search_origin(0);
 
-	//turn foward 180deg
+	//turn foward 360deg
 	for(int i = 0; i < 0x1FF; i++){
-		driver.out(i,0.2f);
+		driver.out(i,0.1f);
 		enc.calibrate(i);
 		HAL_Delay(1);
 	}
-	driver.out(0x200,0.2f);
+	driver.out(0x200,0.1f);
 	HAL_Delay(300);
-	enc.search_origin(0x200);
+	//enc.search_origin(0x400);
 
-	//turn reverse 180deg
-	for(int i = 0x200; i >= 0; i--){
-		driver.out(i,0.2f);
+	//turn reverse 360deg
+	for(int i = 0x1FF; i >= 0; i--){
+		driver.out(i,0.1f);
 		enc.calibrate(i);
 		HAL_Delay(1);
 	}
-	driver.out(0,0.2f);
+	driver.out(0,0.1f);
 	HAL_Delay(300);
 	enc.search_origin(0);
 
-	//turn reverse 180deg
-	for(int i = 0; i >= -0x200; i--){
-		driver.out(i,0.2f);
+	//turn reverse 360deg
+	for(int i = 0; i >= -0x1FF; i--){
+		driver.out(i,0.1f);
 		enc.calibrate(i);
 		HAL_Delay(1);
 	}
-	driver.out(0,0.2f);
+	driver.out(-0x200,0.1f);
 	HAL_Delay(300);
-	enc.search_origin(-0x200);
+	//enc.search_origin(-0x400);
 
-	//turn foward 180deg
-	for(int i = -0x200; i < 0; i++){
-		driver.out(i,0.2f);
+	//turn foward 360deg
+	for(int i = -0x1FF; i < 0; i++){
+		driver.out(i,0.1f);
 		enc.calibrate(i);
 		HAL_Delay(1);
 	}
-	driver.out(0x200,0.2f);
+	driver.out(0,0.1f);
 	HAL_Delay(300);
 	enc.search_origin(0);
 
@@ -71,34 +71,32 @@ void MOTOR::init(void){
 }
 
 void MOTOR::print_debug(void){
-	uint32_t pwm[3];
-	driver.get_pwm_val(&pwm[0], &pwm[1],&pwm[2]);
-//	i_uvw.u = i_uvw.u<0 ? i_uvw.u/((float)pwm[0]*0.001f) : i_uvw.u;
-//	i_uvw.v = i_uvw.v<0 ? i_uvw.v/((float)pwm[1]*0.001f) : i_uvw.v;
-//	i_uvw.w = i_uvw.w<0 ? i_uvw.w/((float)pwm[2]*0.001f) : i_uvw.w;
-	//printf("%4.3f,%4.3f,%4.3f,%5.2f,%4.3f,%4.3f\r\n",i_uvw.u,i_uvw.v,i_uvw.w,adc.get_power_v(),i_dq.d,i_dq.q);
-	printf("%d,%d\r\n",adc.get_raw(ADC_data::RBM_H1),adc.get_raw(ADC_data::RBM_H2));
 
-	math.dq_from_uvw(i_uvw, angle_m, &i_dq);
-	//printf("%4.3f,%4.3f,%d,%d\r\n",i_dq.d,i_dq.q,angle_m,angle_e&0x3FF);
-	//printf("%d\r\n",angle_m);
+	//printf("%4.3f,%4.3f\r\n",test.d,test.q);
+	//printf("%4.3f,%4.3f,%4.3f,%4.3f\r\n",i_dq.d,i_dq.q,v_dq.d,v_dq.q);
+	printf("%4.3f,%4.3f,%4.3f,%5.2f,%4.3f,%4.3f\r\n",i_uvw.u,i_uvw.v,i_uvw.w,adc.get_power_v(),i_dq.d,i_dq.q);
+	//printf("%4.3f,%4.3f,%4.3f,%4.3f\r\n",enc.get_e_sincos().sin,enc.get_e_sincos().cos,math.sin_t(angle_e),math.cos_t(angle_e));
+	//for(int i = 0;i<(int)ADC_data::n;i++) printf("%d,",adc.get_raw(i));
+	//printf("\r\n");
+
 }
 
-PID pid_d(0.001f,0.001f,0);
-PID pid_q(0.001f,0.001f,0);
+PID pid_d(-0.001,-0.002,0,-0.9,0.9);
+PID pid_q(-0.001,-0.002,0,-0.9,0.9);
 void MOTOR::control(void){
 	i_uvw = adc.get_i_uvw();
 
+	math.dq_from_uvw(i_uvw,enc.get_e_sincos(), &i_dq);
 
-	math.dq_from_uvw(i_uvw, angle_m, &i_dq);
-	v_dq.d = pid_d.compute(0.0f,i_dq.d);
-	v_dq.q =pid_q.compute(0.05f,i_dq.q);
+	v_dq.d = pid_d.calc(0.0,i_dq.d);
+	v_dq.q = pid_q.calc(3,i_dq.q);
+//	v_dq.d = -0.1;
+//	v_dq.q = 0.0;
 
-	math.uvw_from_dq(v_dq, angle_m, &v_uvw);
-	//driver.out(v_uvw);
+	math.uvw_from_dq(v_dq,enc.get_e_sincos(), &v_uvw);
+	driver.out(v_uvw);
 
-	//angle_e = angle_m + COSP;
-	driver.out(angle_e,0.05f);
-	angle_e += 1;
+//	driver.out(angle_e,0.05f);
+//	angle_e += 1;
 }
 

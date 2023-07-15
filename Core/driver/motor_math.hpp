@@ -37,12 +37,12 @@ typedef struct sincos{
 }sincos_t;
 
 
-#define USE_CMSIS
-#ifdef USE_CMSIS
-	#define ARM_MATH_CM4
-	#include "arm_math.h"
-	#include "arm_const_structs.h"
-#endif
+#define ARM_MATH_CM4
+//#define __FPU_PRESENT
+#include "arm_const_structs.h"
+#include "arm_math.h"
+
+
 
 
 class motor_math{
@@ -76,16 +76,20 @@ public:
 
 class PID{
 private:
-	float kp = 0;
-	float ki = 0;
-	float kd = 0;
+	const float kp = 0;
+	const float ki = 0;
+	const float kd = 0;
 	float error = 0;
 	float error_sum = 0;
 	float old_error = 0;
-public:
-	PID(float _kp,float _ki,float _kd):kp(_kp),ki(_ki),kd(_kd){}
-	float compute(float target,float feedback);
 
+	const float out_min = 0;
+	const float out_max = 0;
+public:
+	PID(float _kp,float _ki,float _kd,float min,float max)
+	:kp(_kp),ki(_ki),kd(_kd),out_min(min),out_max(max){}
+
+	float calc(float target,float feedback);
 	void reset(void){
 		error = 0;
 		error_sum = 0;
@@ -100,7 +104,7 @@ private:
 	float k = 0;
 public:
 	LPF(float _k):k(_k){}
-	float solve(float input){
+	float calc(float input){
 		data = input*k+(1.0-k)*data;
 		return data;
 	}
@@ -115,7 +119,7 @@ private:
 	float k = 0;
 public:
 	HPF(float _k):k(_k){}
-	float solve(float input){
+	float calc(float input){
 		data = input*k+(1.0-k)*data;
 		return input - data;
 	}

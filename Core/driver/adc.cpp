@@ -21,24 +21,14 @@ void ADC::init(void){
 }
 
 //#define HPF_ACTIVE
-#ifdef HPF_ACTIVE
-HPF hpf_u(0.01);
-HPF hpf_v(0.01);
-HPF hpf_w(0.01);
-#endif
+
 uvw_t ADC::get_i_uvw(void){
 	uvw_t i;
-
-#ifdef HPF_ACTIVE
-	i.u = hpf_u.solve((adc_dma[(int)ADC_data::U_I] - adc_init[(int)ADC_data::U_I]) * i_gain);
-	i.v = hpf_v.solve((adc_dma[(int)ADC_data::V_I] - adc_init[(int)ADC_data::V_I]) * i_gain);
-	i.w = hpf_w.solve((adc_dma[(int)ADC_data::W_I] - adc_init[(int)ADC_data::W_I]) * i_gain);
-#else
-	i.u = (adc_dma[(int)ADC_data::U_I] - adc_init[(int)ADC_data::U_I]) * i_gain;
-	i.v = (adc_dma[(int)ADC_data::V_I] - adc_init[(int)ADC_data::V_I]) * i_gain;
-	i.w = (adc_dma[(int)ADC_data::W_I] - adc_init[(int)ADC_data::W_I]) * i_gain;
+	i.u = -(adc_dma[(int)ADC_data::U_I] - adc_init[(int)ADC_data::U_I]) * i_gain;
+	i.v = -(adc_dma[(int)ADC_data::V_I] - adc_init[(int)ADC_data::V_I]) * i_gain;
+	i.w = -(adc_dma[(int)ADC_data::W_I] - adc_init[(int)ADC_data::W_I]) * i_gain;
 	//i.w = -i.v-i.u;
-	int data_state = (i.u<0?0:0b100) + (i.v<0?0:0b10) + (i.w<0?0:0b1);
+	int data_state = (i.u>0?0:0b100) + (i.v>0?0:0b10) + (i.w>0?0:0b1);
 	switch (data_state) {
 	case 0b011:
 		i.u = -i.v - i.w;
@@ -52,7 +42,6 @@ uvw_t ADC::get_i_uvw(void){
 	default:
 	    break;
 	}
-#endif
 	return i;
 }
 

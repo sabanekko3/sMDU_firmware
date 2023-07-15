@@ -27,7 +27,7 @@ public:
 		diff_inv = 1/(max - min);
 	}
 
-	bool out(float val);//-1~1
+	void out(float val);//-1~1
 
 	uint32_t get_compare_val(void){
 		return pwm_val;

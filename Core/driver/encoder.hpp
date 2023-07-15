@@ -49,17 +49,21 @@ public:
 #endif
 
 //AB LINER HALL SENSOR(for robotmaster)///////////////////////////////////////////////
+enum class HALL_SENS{
+	H1,
+	H2
+};
 class AB_LINER{
 private:
 	ADC &adc;
 
 
-	float raw_to_regular=0;
-	uint16_t move_to_centor=0;
+	float raw_to_regular[2]={0};
+	int16_t move_to_centor[2]={0};
 public:
 	AB_LINER(ADC &_adc):adc(_adc){}
-	void set_param(uint16_t _min,uint16_t _max);
-	uint16_t get_raw(ADC_data sens){
+	void set_param(HALL_SENS sens,int16_t min,int16_t max);
+	uint16_t get_raw(HALL_SENS sens){
 		return adc.get_raw(sens);
 	}
 	sincos_t get_sincos(void);
@@ -78,9 +82,12 @@ private:
 	AB_LINER &ab_liner;
 	ENC_type type;
 
-	int data[4] = {0};
+	int16_t origin = 0;
+
+	//for search origin
 	int count = 0;
-	int origin = 0;
+	int16_t origin_search_sum = 0;
+
 public:
 	ENCODER(int _motor_pole,motor_math &_math,AS5600 &_as5600,AB_LINER &_ab_liner)
 	:motor_pole(_motor_pole),math(_math),as5600(_as5600),ab_liner(_ab_liner){
@@ -95,11 +102,11 @@ public:
 	void search_origin(const int angle);
 	void calc_param(void);
 
-	int get_angle(void);
-
 	bool is_available(void);
 
 	void timer_interrupt_task(void);
+
+	int get_e_angle(void);
 
 	sincos_t get_e_sincos(void);
 };

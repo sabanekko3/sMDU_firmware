@@ -24,14 +24,14 @@ uint16_t AS5600::get_angle(void){
 }
 
 //AB LINER HALL SENSOR(for robotmaster)///////////////////////////////////////////////
-void AB_LINER::set_param(uint16_t min,uint16_t max){
-	raw_to_regular = 2/(max-min);
-	move_to_centor = -(max-min)/2 - min;
+void AB_LINER::set_param(HALL_SENS sens,int16_t min,int16_t max){
+	raw_to_regular[(int)sens] = 2.0f/(float)(max-min);
+	move_to_centor[(int)sens] = -(max-min)/2 - min;
 }
 sincos_t AB_LINER::get_sincos(void){
 	sincos_t data;
-	data.sin = (float)(adc.get_raw(ADC_data::RBM_H1)+move_to_centor)*raw_to_regular;
-	data.cos = (float)(adc.get_raw(ADC_data::RBM_H2)+move_to_centor)*raw_to_regular;
+	data.cos = (float)(adc.get_raw(ADC_data::RBM_H2)+move_to_centor[(int)HALL_SENS::H2])*raw_to_regular[(int)HALL_SENS::H2];
+	data.sin = (float)(adc.get_raw(ADC_data::RBM_H1)+move_to_centor[(int)HALL_SENS::H1])*raw_to_regular[(int)HALL_SENS::H1];
 	return data;
 }
 
@@ -71,27 +71,60 @@ void ENCODER::calibrate(const int angle){
 	case ENC_type::UVW_HALL:
 		break;
 	case ENC_type::AB_LINER_HALL:
-		static int max = 0;
-		static int min = 0;
-		int h1 = ab_liner.get_raw(ADC_data::RBM_H1);
-		int h2 = ab_liner.get_raw(ADC_data::RBM_H2);
+		static uint16_t max[2] = {0,0};
+		static uint16_t min[2] = {6000,6000};
+		uint16_t h1 = ab_liner.get_raw(HALL_SENS::H2);
+		uint16_t h2 = ab_liner.get_raw(HALL_SENS::H2);
 
-		if(max < h1) max = h1;
-		if(max < h2) max = h2;
+		if(max[(int)HALL_SENS::H1] < h1) max[(int)HALL_SENS::H1] = h1;
+		if(max[(int)HALL_SENS::H2] < h2) max[(int)HALL_SENS::H2] = h2;
 
-		if(min > h1) min = h1;
-		if(min > h2) min = h2;
+		if(min[(int)HALL_SENS::H1] > h1) min[(int)HALL_SENS::H1] = h1;
+		if(min[(int)HALL_SENS::H2] > h2) min[(int)HALL_SENS::H2] = h2;
 
-		ab_liner.set_param(min, max);
+		ab_liner.set_param(HALL_SENS::H1,min[(int)HALL_SENS::H1], max[(int)HALL_SENS::H1]);
+		ab_liner.set_param(HALL_SENS::H2,min[(int)HALL_SENS::H2], max[(int)HALL_SENS::H2]);
 		break;
 	}
 }
 void ENCODER::search_origin(int angle){
 	switch(type){
 	case ENC_type::AS5600:
-		as5600.read_start();
-		while(!as5600.is_available());
-		data[count&0b11] = as5600.get_angle();
+
+		if(angle == 0){
+			as5600.read_start();
+			while(!as5600.is_available());
+			int16_t angle = as5600.get_angle() - origin;
+			if(count == 0){
+				origin = angle;
+			}else{
+				angle |= (angle&0x200)?0xFC00:0;
+				origin_search_sum += angle;
+			}
+		}
+
+		break;
+
+	case ENC_type::AS5048:
+		//as5048.init();
+		break;
+	case ENC_type::ABX:
+		break;
+	case ENC_type::UVW_HALL:
+		break;
+	case ENC_type::AB_LINER_HALL:
+		break;
+	}
+	count ++;
+}
+void ENCODER::calc_param(void){
+	switch(type){
+	case ENC_type::AS5600:
+
+		if(count != 0){
+			origin += origin_search_sum / count;
+		}
+
 		break;
 	case ENC_type::AS5048:
 		//as5048.init();
@@ -101,15 +134,8 @@ void ENCODER::search_origin(int angle){
 	case ENC_type::UVW_HALL:
 		break;
 	case ENC_type::AB_LINER_HALL:
-//		float rad;
-//		arm_atan2_f32((float)ab_liner.get_raw(HALL_SENS::H1),(float)ab_liner.get_raw(HALL_SENS::H2),&rad);
-//		data[count&0b11]=(int)(rad*rad_to_angle);
 		break;
 	}
-	count ++;
-}
-void ENCODER::calc_param(void){
-
 }
 
 
@@ -148,13 +174,44 @@ void ENCODER::timer_interrupt_task(void){
 	}
 }
 
+int ENCODER::get_e_angle(void){
+	int angle = 0;
+	int rad = 0.0f;
+	sincos_t sincos_data;
+	switch(type){
+	case ENC_type::AS5600:
+
+		angle = (as5600.get_angle()-origin)&0x3FF;
+		return ((angle*motor_pole*0x3FF/as5600.get_resolution())&0x3FF);
+		break;
+
+	case ENC_type::AS5048:
+		break;
+	case ENC_type::ABX:
+		break;
+	case ENC_type::UVW_HALL:
+		break;
+	case ENC_type::AB_LINER_HALL:
+		sincos_data = ab_liner.get_sincos();
+		//arm_atan2_f32((float)ab_liner.get_raw(HALL_SENS::H1),(float)ab_liner.get_raw(HALL_SENS::H2),&rad);
+		rad = atan2(sincos_data.cos,sincos_data.sin);
+		return (int)(rad*rad_to_angle);
+		break;
+
+	}
+	return 0;
+}
+
 sincos_t ENCODER::get_e_sincos(void){
 	sincos_t data;
 	int angle = 0;
 	switch(type){
 	case ENC_type::AS5600:
 		angle = (as5600.get_angle()-origin)&0x3FF;
+
+		//mechanical angle -> electrical angle
 		angle = ((angle*motor_pole*0x3FF/as5600.get_resolution())&0x3FF);
+
 		data.sin = math.sin_t(angle);
 		data.cos = math.cos_t(angle);
 		break;
@@ -167,7 +224,7 @@ sincos_t ENCODER::get_e_sincos(void){
 		break;
 	case ENC_type::AB_LINER_HALL:
 
-		//data = ab_liner.get_sincos();
+		data = ab_liner.get_sincos();
 		break;
 	}
 

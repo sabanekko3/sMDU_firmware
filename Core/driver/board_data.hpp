@@ -31,7 +31,7 @@ enum class ADC_data{
 	RBM_H1,
 	n,
 
-	adc1_n = 3,
+	adc1_n = 2,
 	adc2_n = 4
 };
 
