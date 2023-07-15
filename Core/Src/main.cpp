@@ -23,6 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "../driver/motor.hpp"
+#include "../driver/can.hpp"
 
 /* USER CODE END Includes */
 
@@ -106,6 +107,8 @@ ENCODER enc(7,mathlib,as5600_enc,ab_liner_enc);
 
 MOTOR motor(driver,adc,mathlib,enc);
 
+CAN_COM can(&hcan,CAN_FILTER_FIFO0);
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(htim == &htim7){
 #ifdef TIM7_INT
@@ -125,6 +128,13 @@ void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c){
 	static float g_val = 0;
 	G.out(g_val);
 	g_val = g_val < 0.3 ? 0.5 : 0;
+}
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
+    can.rx_interrupt_task();
+    static float g_val = 0;
+    G.out(g_val);
+    g_val = g_val < 0.3 ? 0.5 : 0;
 }
 
 
@@ -177,10 +187,12 @@ int main(void)
 
   enc.select(ENC_type::AB_LINER_HALL);
   motor.init();
-  HAL_TIM_Base_Start_IT(&htim6);
-  HAL_TIM_Base_Start_IT(&htim7);
+  //HAL_TIM_Base_Start_IT(&htim6);
+  //HAL_TIM_Base_Start_IT(&htim7);
   G.out(0);
   R.out(0.5);
+
+  can_frame_t rx_data;
 
 
   /* USER CODE END 2 */
@@ -192,9 +204,20 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  //motor.control();
-	  motor.print_debug();
-	  HAL_Delay(1);
+
+
+//	  motor.print_debug();
+//	  HAL_Delay(1);
+
+	  if(can.rx_available()){
+		  can.rx(rx_data);
+		  printf("id:%d  ",rx_data.id);
+		  for(uint32_t i = 0; i < 8; i++){
+			  printf("[%d]:%d ",rx_data.data[i]);
+		  }
+		  printf("\r\n");
+	  }
+
   }
   /* USER CODE END 3 */
 }
@@ -417,11 +440,11 @@ static void MX_CAN_Init(void)
 
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN;
-  hcan.Init.Prescaler = 16;
+  hcan.Init.Prescaler = 2;
   hcan.Init.Mode = CAN_MODE_NORMAL;
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan.Init.TimeSeg1 = CAN_BS1_1TQ;
-  hcan.Init.TimeSeg2 = CAN_BS2_1TQ;
+  hcan.Init.TimeSeg1 = CAN_BS1_15TQ;
+  hcan.Init.TimeSeg2 = CAN_BS2_2TQ;
   hcan.Init.TimeTriggeredMode = DISABLE;
   hcan.Init.AutoBusOff = DISABLE;
   hcan.Init.AutoWakeUp = DISABLE;
