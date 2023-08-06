@@ -79,6 +79,8 @@ void MOTOR::print_debug(void){
 	//for(int i = 0;i<(int)ADC_data::n;i++) printf("%d,",adc.get_raw(i));
 	//printf("\r\n");
 
+	//printf("%d,%d,%d\r\n",adc.get_raw(ADC_data::U_I),adc.get_raw(ADC_data::V_I));
+
 }
 
 PID pid_d(-0.001,-0.002,0,-0.9,0.9);
@@ -88,15 +90,15 @@ void MOTOR::control(void){
 
 	math.dq_from_uvw(i_uvw,enc.get_e_sincos(), &i_dq);
 
-	v_dq.d = pid_d.calc(0.0,i_dq.d);
-	v_dq.q = pid_q.calc(3,i_dq.q);
+	v_dq.d = pid_d.calc(i_dq_target.d,i_dq.d);
+	v_dq.q = pid_q.calc(i_dq_target.d,i_dq.q);
 //	v_dq.d = -0.1;
 //	v_dq.q = 0.0;
 
 	math.uvw_from_dq(v_dq,enc.get_e_sincos(), &v_uvw);
 	driver.out(v_uvw);
 
-//	driver.out(angle_e,0.05f);
+//	driver.out(angle_e,0.3f);
 //	angle_e += 1;
 }
 

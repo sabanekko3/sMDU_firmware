@@ -19,22 +19,30 @@
 
 #define TIM7_INT
 #define TIM7_FRQ 10000
-//#define SPI_DMA
 
-enum class ADC_data{
-	//adc1
-	W_I,
-	RBM_H2,
-	//adc2
-	U_I,
-	V_I,
-	POWER_V,
-	RBM_H1,
-	n,
-
-	adc1_n = 2,
-	adc2_n = 4
+enum class borard_reg{
+	CAN_ID,             //r (set via UART)
+	MOTOR_TYPE,         //r/w
+	CONTROL_MODE,       //r/w
+	ENC_TYPE,           //r/w
+	FOC_GAIN_P,         //r/w
+	FOC_GAIN_I,         //r/w
+	SPD_GAIN_P,         //r/w
+	SPD_GAIN_I,         //r/w
+	SPD_GAIN_D,         //r/w
+	M_POS,              //r
+	I_LIMIT,            //r/w
+	BATT_VOL            //r
 };
+
+enum class motor_type{
+	DC,
+	FOC,
+	BLDC_FORCED_COMM,
+	FOC_SENSORLESS,
+};
+
+
 
 enum class PHASE{
 	U,

@@ -27,23 +27,31 @@ private:
 	bool data_new = false;
 	uint8_t enc_val[2] = {0};
 
-public:
 
+	int turn_count = 0;
+	uint16_t angle_old = 0;
+
+public:
 	AS5600(I2C_HandleTypeDef *_i2c):i2c(_i2c){}
 
 	void init(void);
 	void read_start(void);
 	uint16_t get_angle(void);
 
+	void turn_check(void);
+
+	//get parameter
 	uint16_t get_resolution(void){
 		return resolution;
 	}
-
 	bool is_available(void){
 		return data_new;
 	}
 	void set_flag(bool f){
 		data_new = f;
+	}
+	int get_count(void){
+		return turn_count;
 	}
 };
 #endif
@@ -53,20 +61,35 @@ enum class HALL_SENS{
 	H1,
 	H2
 };
+
 class AB_LINER{
 private:
 	ADC &adc;
 
-
+	//parametor for get_sincos
 	float raw_to_regular[2]={0};
 	int16_t move_to_centor[2]={0};
+
+	uint32_t enc_phase = 0;
+	uint32_t enc_phase_old = 0;
+
+	int phase_count  = 0;
 public:
 	AB_LINER(ADC &_adc):adc(_adc){}
 	void set_param(HALL_SENS sens,int16_t min,int16_t max);
+
+	sincos_t get_sincos(void);
+
+	//for timer int
+	void turn_check(void);
+
+	//paramater read
 	uint16_t get_raw(HALL_SENS sens){
 		return adc.get_raw(sens);
 	}
-	sincos_t get_sincos(void);
+	int get_turn(void){
+		return phase_count;
+	}
 };
 
 
@@ -75,6 +98,8 @@ class ENCODER{
 private:
 	const int motor_pole;
 	motor_math &math;
+
+	//encoders
 	AS5600 &as5600;
 	//AS5048 &as5048;
 	//ABX &abx;
@@ -85,9 +110,10 @@ private:
 	int16_t origin = 0;
 
 	//for search origin
-	int count = 0;
+	int origin_search_count = 0;
 	int16_t origin_search_sum = 0;
 
+	uint16_t angle_old = 0;
 public:
 	ENCODER(int _motor_pole,motor_math &_math,AS5600 &_as5600,AB_LINER &_ab_liner)
 	:motor_pole(_motor_pole),math(_math),as5600(_as5600),ab_liner(_ab_liner){
@@ -105,8 +131,11 @@ public:
 	bool is_available(void);
 
 	void timer_interrupt_task(void);
+	void read_completion_interrupt_task(void);
 
+	//e_angle:電気角
 	int get_e_angle(void);
+	int get_e_angle_sum(void);
 
 	sincos_t get_e_sincos(void);
 };

@@ -89,17 +89,20 @@ extern "C" {
 }
 
 motor_math mathlib;
+
+//setup led
 PWM R(&htim2, TIM_CHANNEL_1, 1000,0,1,0);
 PWM G(&htim2, TIM_CHANNEL_2, 1000,0,1,0);
 PWM B(&htim2, TIM_CHANNEL_3, 1000,0,1,0);
 
+//setup pwm
 PWM U(&htim1, TIM_CHANNEL_3, 1000,-1,1,0.1);
 PWM V(&htim1, TIM_CHANNEL_2, 1000,-1,1,0.1);
 PWM W(&htim1, TIM_CHANNEL_1, 1000,-1,1,0.1);
 
 DRIVER driver(U,V,W,MD_EN_GPIO_Port,MD_EN_Pin,mathlib);
 
-ADC adc(&hadc1,&hadc2,3.3/(0.1*4096.0),11.0/4096.0*3.3);
+ADC adc(&hadc1,&hadc2,3.3/(0.05*4096.0),11.0/4096.0*3.3);
 
 AS5600 as5600_enc(&hi2c1);
 AB_LINER ab_liner_enc(adc);
@@ -124,7 +127,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 
 
 void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c){
-	//enc.set_flag(true);
+	enc.read_completion_interrupt_task();
 	static float g_val = 0;
 	G.out(g_val);
 	g_val = g_val < 0.3 ? 0.5 : 0;
@@ -132,9 +135,6 @@ void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c){
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
     can.rx_interrupt_task();
-    static float g_val = 0;
-    G.out(g_val);
-    g_val = g_val < 0.3 ? 0.5 : 0;
 }
 
 
@@ -186,9 +186,9 @@ int main(void)
   G.out(0.5);
 
   enc.select(ENC_type::AB_LINER_HALL);
-//  motor.init();
-//  HAL_TIM_Base_Start_IT(&htim6);
-//  HAL_TIM_Base_Start_IT(&htim7);
+  motor.init();
+  HAL_TIM_Base_Start_IT(&htim6);
+  HAL_TIM_Base_Start_IT(&htim7);
   G.out(0);
   R.out(0.5);
 
@@ -208,29 +208,18 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-//
-//	  motor.print_debug();
-//	  HAL_Delay(1);
 
-	  if(can.rx_available()){
-		  can.rx(data);
-		  printf("id:%x  ",data.id);
-		  for(uint32_t i = 0; i < 8; i++){
-			  printf("[%d]:%d ",i,data.data[i]);
-		  }
-		  printf("\r\n");
-	  }
+	  motor.print_debug();
+	  HAL_Delay(1);
 
-//	  data.data[0] = 0xAB;
-//	  data.data[1] = 0xCD;
-//
-//	  data.is_ext_id = false;
-//	  data.is_remote = false;
-//	  data.size  = 2;
-//
-//	  can.tx(data);
-//
-//	  HAL_Delay(500);
+//	  if(can.rx_available()){
+//		  can.rx(data);
+//		  printf("id:%x  ",data.id);
+//		  for(uint32_t i = 0; i < 8; i++){
+//			  printf("[%d]:%d ",i,data.data[i]);
+//		  }
+//		  printf("\r\n");
+//	  }
 
   }
   /* USER CODE END 3 */
@@ -542,7 +531,7 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 1;
+  htim1.Init.Prescaler = 0;
   htim1.Init.CounterMode = TIM_COUNTERMODE_CENTERALIGNED1;
   htim1.Init.Period = 1000;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
