@@ -13,11 +13,11 @@
 
 enum class ADC_data{
 	//adc1
-	W_I,
+	V_I,
 	RBM_H2,
 	//adc2
+	W_I,
 	U_I,
-	V_I,
 	POWER_V,
 	RBM_H1,
 	n,

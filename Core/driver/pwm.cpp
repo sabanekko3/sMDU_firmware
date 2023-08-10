@@ -8,9 +8,9 @@
 #include "pwm.hpp"
 
 void PWM::out(float val){
-	if(val < min+margin || max-margin < val){
-		val  = 0;
-	}
+	if(val < min+margin || max-margin < val)val  = 0;
+
+	if(polarity_inv) val *= -1;
 	pwm_val = (val - min)*diff_inv*tim_period;
 
 	__HAL_TIM_SET_COMPARE(tim, ch, pwm_val);

@@ -41,37 +41,24 @@ void AB_LINER::set_param(HALL_SENS sens,int16_t min,int16_t max){
 
 sincos_t AB_LINER::get_sincos(void){
 	sincos_t data;
-	data.cos = (float)(adc.get_raw(ADC_data::RBM_H2)+move_to_centor[(int)HALL_SENS::H2])*raw_to_regular[(int)HALL_SENS::H2];
-	data.sin = (float)(adc.get_raw(ADC_data::RBM_H1)+move_to_centor[(int)HALL_SENS::H1])*raw_to_regular[(int)HALL_SENS::H1];
+	data.sin = -(float)(adc.get_raw(ADC_data::RBM_H2)+move_to_centor[(int)HALL_SENS::H2])*raw_to_regular[(int)HALL_SENS::H2];
+	data.cos = (float)(adc.get_raw(ADC_data::RBM_H1)+move_to_centor[(int)HALL_SENS::H1])*raw_to_regular[(int)HALL_SENS::H1];
 	return data;
 }
 
 void AB_LINER::turn_check(void){
 	sincos_t sincos_data = get_sincos();
 
-	enc_phase_old = enc_phase;
-	enc_phase = 0;
-	enc_phase |= sincos_data.sin >= 0.0f ? 0b01:0b00;
-	enc_phase |= sincos_data.sin >= 0.0f ? 0b10:0b00;
-	if(enc_phase == 0b11){
-		enc_phase = 2;
-	}else if(enc_phase == 0b10){
-		enc_phase = 3;
-	}
+	int enc_phase = 0;
+	enc_phase |= (sincos_data.sin >= 0.0f) ? 0b01:0b00;
+	enc_phase |= (sincos_data.cos >= 0.0f) ? 0b10:0b00;
 
-	if(enc_phase > enc_phase_old){
-		if(enc_phase == 3){
-			phase_count --;
-		}else{
-			phase_count ++;
-		}
-	}else if(enc_phase < enc_phase_old){
-		if(enc_phase == 0){
-			phase_count ++;
-		}else{
-			phase_count --;
-		}
+	if(enc_phase == 0b10 && enc_phase_log == 0b11){
+		turn_count --;
+	}else if(enc_phase == 0b11 && enc_phase_log == 0b10){
+		turn_count ++;
 	}
+	enc_phase_log = enc_phase;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -195,7 +182,6 @@ bool ENCODER::is_available(void){
 	return false;
 }
 void ENCODER::timer_interrupt_task(void){
-	sincos_t sincos_data;
 	switch(type){
 	case ENC_type::AS5600:
 		as5600.read_start();
@@ -249,8 +235,12 @@ int ENCODER::get_e_angle(void){
 		break;
 	case ENC_type::AB_LINER_HALL:
 		sincos_data = ab_liner.get_sincos();
-		//arm_atan2_f32((float)ab_liner.get_raw(HALL_SENS::H1),(float)ab_liner.get_raw(HALL_SENS::H2),&rad);
-		rad = atan2(sincos_data.cos,sincos_data.sin);
+		//arm_atan2_f32(sincos_data.cos,sincos_data.cos);
+		//rad = -atan2(sincos_data.cos,sincos_data.sin);
+		rad = atan2(sincos_data.sin,sincos_data.cos);
+		if(rad < 0){
+			rad = 2*M_PI+rad;
+		}
 		return (int)(rad*rad_to_angle);
 		break;
 	}
@@ -271,7 +261,7 @@ int ENCODER::get_e_angle_sum(void){
 	case ENC_type::UVW_HALL:
 		break;
 	case ENC_type::AB_LINER_HALL:
-		return (ab_liner.get_turn()/4) * 1024 + get_e_angle();
+		return ab_liner.get_turn_count() * 1024; + get_e_angle();
 		break;
 	}
 	return 0;

@@ -27,7 +27,7 @@ private:
 
 	//current data
 	uvw_t i_uvw;
-	dq_t i_dq;
+	dq_t i_dq = {0,0};
 	uvw_t v_uvw;
 	dq_t v_dq;
 

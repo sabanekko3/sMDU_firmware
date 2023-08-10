@@ -70,10 +70,8 @@ private:
 	float raw_to_regular[2]={0};
 	int16_t move_to_centor[2]={0};
 
-	uint32_t enc_phase = 0;
-	uint32_t enc_phase_old = 0;
-
-	int phase_count  = 0;
+	int32_t turn_count = 0;
+	uint32_t enc_phase_log = 0;
 public:
 	AB_LINER(ADC &_adc):adc(_adc){}
 	void set_param(HALL_SENS sens,int16_t min,int16_t max);
@@ -87,8 +85,8 @@ public:
 	uint16_t get_raw(HALL_SENS sens){
 		return adc.get_raw(sens);
 	}
-	int get_turn(void){
-		return phase_count;
+	int get_turn_count(void){
+		return turn_count;
 	}
 };
 

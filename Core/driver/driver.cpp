@@ -8,9 +8,9 @@
 
 
 void DRIVER::out(int angle,float power){
-	pwm_u.out(-power*math.cos_t(angle));
-	pwm_v.out(-power*math.cos_t(angle-V_PHASE));
-	pwm_w.out(-power*math.cos_t(angle+V_PHASE));
+	pwm_u.out(power*math.cos_t(angle));
+	pwm_v.out(power*math.cos_t(angle-V_PHASE));
+	pwm_w.out(power*math.cos_t(angle+V_PHASE));
 }
 void DRIVER::out(uvw_t uvw){
 	pwm_u.out(uvw.u);

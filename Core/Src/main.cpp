@@ -91,14 +91,14 @@ extern "C" {
 motor_math mathlib;
 
 //setup led
-PWM R(&htim2, TIM_CHANNEL_1, 1000,0,1,0);
-PWM G(&htim2, TIM_CHANNEL_2, 1000,0,1,0);
-PWM B(&htim2, TIM_CHANNEL_3, 1000,0,1,0);
+PWM R(&htim2, TIM_CHANNEL_1, 1000,0,1,0,false);
+PWM G(&htim2, TIM_CHANNEL_2, 1000,0,1,0,false);
+PWM B(&htim2, TIM_CHANNEL_3, 1000,0,1,0,false);
 
 //setup pwm
-PWM U(&htim1, TIM_CHANNEL_3, 1000,-1,1,0.1);
-PWM V(&htim1, TIM_CHANNEL_2, 1000,-1,1,0.1);
-PWM W(&htim1, TIM_CHANNEL_1, 1000,-1,1,0.1);
+PWM U(&htim1, TIM_CHANNEL_3, 1000,-1,1,0.1,true);
+PWM V(&htim1, TIM_CHANNEL_2, 1000,-1,1,0.1,true);
+PWM W(&htim1, TIM_CHANNEL_1, 1000,-1,1,0.1,true);
 
 DRIVER driver(U,V,W,MD_EN_GPIO_Port,MD_EN_Pin,mathlib);
 
@@ -196,6 +196,7 @@ int main(void)
   HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
   can.set_filter_free();
   can_frame_t data;
+  dq_t dq_target = {0,0};
   printf("start\r\n");
 
   /* USER CODE END 2 */
@@ -208,7 +209,14 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
+	  if(can.rx_available()){
+		  can.rx(data);
+		  if(data.id == 0b1){
+			 dq_target.q = *(float*)(void*)data.data;
 
+		  }
+	  }
+	  motor.set_dq_current(dq_target);
 	  motor.print_debug();
 	  HAL_Delay(1);
 
@@ -531,7 +539,7 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 0;
+  htim1.Init.Prescaler = 1;
   htim1.Init.CounterMode = TIM_COUNTERMODE_CENTERALIGNED1;
   htim1.Init.Period = 1000;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -557,9 +565,9 @@ static void MX_TIM1_Init(void)
   {
     Error_Handler();
   }
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.OCMode = TIM_OCMODE_PWM2;
   sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_LOW;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
