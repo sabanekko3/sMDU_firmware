@@ -25,11 +25,14 @@ private:
 	uint16_t angle_e;
 	uint16_t angle_m;
 
+	//current data
 	uvw_t i_uvw;
-	dq_t i_dq;
-
+	dq_t i_dq = {0,0};
 	uvw_t v_uvw;
 	dq_t v_dq;
+
+	//target_data
+	dq_t i_dq_target;
 
 public:
 	MOTOR(DRIVER &_driver,ADC &_adc,motor_math &_math,ENCODER &_enc)
@@ -38,6 +41,10 @@ public:
 
 	void print_debug(void);
 	void control(void);
+
+	void set_dq_current(dq_t target){
+		i_dq_target = target;
+	}
 };
 
 

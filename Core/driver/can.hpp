@@ -14,13 +14,13 @@
 #define CAN_RX_BUFF_AND 0xF
 
 typedef struct{
-	uint8_t data[8];
-	size_t size;
-	uint32_t id;
-	bool is_ext_id;
-	bool is_remote;
+	uint8_t data[8]={0};
+	size_t size=0;
+	uint32_t id=0;
+	bool is_ext_id=false;
+	bool is_remote=false;
 
-	bool is_free;
+	bool is_free=true;
 }can_frame_t;
 
 enum class filter_mode{
@@ -41,14 +41,6 @@ private:
 public:
 	CAN_COM(CAN_HandleTypeDef *_can,uint32_t _rx_fifo)
 	:can(_can),rx_fifo(_rx_fifo){
-		for(uint32_t i = 0; i < CAN_RX_BUFF_N; i++){
-			memset(rx_buff[i].data,0,sizeof(rx_buff));
-			rx_buff[i].size = 0;
-			rx_buff[i].id = 0;
-			rx_buff[i].is_ext_id = false;
-			rx_buff[i].is_remote = false;
-			rx_buff[i].is_free = true;
-		}
 	}
 
 	//can tx functions

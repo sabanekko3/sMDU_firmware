@@ -11,6 +11,21 @@
 #include "board_data.hpp"
 #include "motor_math.hpp"
 
+enum class ADC_data{
+	//adc1
+	V_I,
+	RBM_H2,
+	//adc2
+	W_I,
+	U_I,
+	POWER_V,
+	RBM_H1,
+	n,
+
+	adc1_n = 2,
+	adc2_n = 4
+};
+
 class ADC{
 private:
 	ADC_HandleTypeDef *adc1;

@@ -27,21 +27,22 @@ uvw_t ADC::get_i_uvw(void){
 	i.u = -(adc_dma[(int)ADC_data::U_I] - adc_init[(int)ADC_data::U_I]) * i_gain;
 	i.v = -(adc_dma[(int)ADC_data::V_I] - adc_init[(int)ADC_data::V_I]) * i_gain;
 	i.w = -(adc_dma[(int)ADC_data::W_I] - adc_init[(int)ADC_data::W_I]) * i_gain;
-	//i.w = -i.v-i.u;
-	int data_state = (i.u>0?0:0b100) + (i.v>0?0:0b10) + (i.w>0?0:0b1);
-	switch (data_state) {
-	case 0b011:
-		i.u = -i.v - i.w;
-	    break;
-	case 0b101:
-	    i.v = -i.u - i.w;
-	    break;
-	case 0b110:
-		i.w = -i.u - i.v;
-	    break;
-	default:
-	    break;
-	}
+	i.v = -i.w-i.u;
+	//i.v = -i.w-i.u;
+//	int data_state = (i.u>0?0:0b100) + (i.v>0?0:0b10) + (i.w>0?0:0b1);
+//	switch (data_state) {
+//	case 0b011:
+//		i.u = -i.v - i.w;
+//	    break;
+//	case 0b101:
+//	    i.v = -i.u - i.w;
+//	    break;
+//	case 0b110:
+//		i.w = -i.u - i.v;
+//	    break;
+//	default:
+//	    break;
+//	}
 	return i;
 }
 
@@ -50,8 +51,8 @@ float ADC::get_power_v(void){
 }
 
 void ADC::dma_start(void){
-	HAL_ADC_Start_DMA(adc1, (uint32_t*) &adc_dma[(int)ADC_data::W_I], (int)ADC_data::adc1_n);
-	HAL_ADC_Start_DMA(adc2, (uint32_t*) &adc_dma[(int)ADC_data::U_I], (int)ADC_data::adc2_n);
+	HAL_ADC_Start_DMA(adc1, (uint32_t*) &adc_dma[(int)ADC_data::V_I], (int)ADC_data::adc1_n);
+	HAL_ADC_Start_DMA(adc2, (uint32_t*) &adc_dma[(int)ADC_data::W_I], (int)ADC_data::adc2_n);
 }
 
 void ADC::dma_stop(void){
