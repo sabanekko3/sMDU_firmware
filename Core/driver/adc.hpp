@@ -46,6 +46,7 @@ public:
 	void dma_start(void);
 	void dma_stop(void);
 
+	//inline functions
 	template<typename T>
 	uint16_t get_raw(T d){
 		return adc_dma[(int)d];

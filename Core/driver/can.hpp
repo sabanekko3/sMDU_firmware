@@ -43,18 +43,19 @@ public:
 	:can(_can),rx_fifo(_rx_fifo){
 	}
 
-	//can tx functions
+	//can tx functions/////////////////////////////
+	bool tx(can_frame_t &tx_data);
+	//inline functions
 	uint32_t tx_available(void){
 		return HAL_CAN_GetTxMailboxesFreeLevel(can);
 	}
-	bool tx(can_frame_t &tx_data);
 
-	//can rx fuctions
+	//can rx fuctions//////////////////////////////
 	uint32_t rx_available(void);
 	void rx_interrupt_task(void);
 	bool rx(can_frame_t &rx_frame);
 
-	//can filter setting
+	//can filter setting///////////////////////////
 	void set_filter_mask(uint32_t id,uint32_t mask,filter_mode mode,bool as_std);
 	void set_filter_free(void);
 };

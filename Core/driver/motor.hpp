@@ -15,19 +15,21 @@
 #include "adc.hpp"
 #include "encoder.hpp"
 
-class MOTOR{
+class MOTOR : motor_math{
 private:
 	DRIVER &driver;
-	motor_math &math;
 	ADC &adc;
 	ENCODER &enc;
 
 	uint16_t angle_e;
-	uint16_t angle_m;
+
+	//dq current PID
+	PID pid_d;
+	PID pid_q;
 
 	//current data
 	uvw_t i_uvw;
-	dq_t i_dq = {0,0};
+	dq_t i_dq;
 	uvw_t v_uvw;
 	dq_t v_dq;
 
@@ -35,13 +37,17 @@ private:
 	dq_t i_dq_target;
 
 public:
-	MOTOR(DRIVER &_driver,ADC &_adc,motor_math &_math,ENCODER &_enc)
-		:driver(_driver),adc(_adc),math(_math),enc(_enc){}
+	MOTOR(DRIVER &_driver,ADC &_adc,ENCODER &_enc)
+		:driver(_driver),adc(_adc),enc(_enc),
+		 pid_d(false,TIM7_FRQ),pid_q(false,TIM7_FRQ){
+
+	}
 	void init(void);
 
 	void print_debug(void);
 	void control(void);
 
+	//inline functions
 	void set_dq_current(dq_t target){
 		i_dq_target = target;
 	}

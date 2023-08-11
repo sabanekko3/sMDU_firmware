@@ -11,12 +11,8 @@
 #include "board_data.hpp"
 
 #define TABLE_SIZE 1024
-#define COSP 256
-#define V_PHASE 341
-#define W_PHASE 683
-
-constexpr float angle_to_rad = (2*M_PI)/TABLE_SIZE;
-constexpr float rad_to_angle = TABLE_SIZE/(2*M_PI);
+#define PHASE_90 256
+#define PHASE_120 341
 
 typedef struct dq{
 	float d;
@@ -42,66 +38,84 @@ typedef struct sincos{
 #include "arm_const_structs.h"
 #include "arm_math.h"
 
-
-
-
+//motor_math/////////////////////////////////////////////////////////////
 class motor_math{
 private:
-#ifndef USE_CMSIS
-	float sqrt3 = sqrt(3.0);
-	float sqrt3inv = 1/sqrt(3.0);
-#endif
-	const float angle_rad = 0x3FF/(2*M_PI);
-	float table[TABLE_SIZE];
+	static float table[TABLE_SIZE];
+
+	static constexpr float ANGLE_TO_RAD = (2*M_PI)/TABLE_SIZE;
+	static constexpr float RAD_TO_ANGLE = TABLE_SIZE/(2*M_PI);
 public:
 	motor_math(void);
-	float sin_t(int angle){
+
+	static void dq_from_uvw(uvw_t input,uint16_t deg_e,dq_t *out);
+	static void dq_from_uvw(uvw_t input,sincos_t param,dq_t *out);
+	static void uvw_from_dq(dq_t input,uint16_t deg_e,uvw_t *out);
+	static void uvw_from_dq(dq_t input,sincos_t param,uvw_t *out);
+
+	//inline functions
+	static float sin_table(int angle){
 		return table[angle & 0x3FF];
 	}
-	float cos_t(int angle){
-		return table[(angle+COSP) & 0x3FF];
+	static float cos_table(int angle){
+		return table[(angle+PHASE_90) & 0x3FF];
 	}
-	float sin_t(float rad){
-		return table[(uint16_t)(rad * angle_rad) & 0x3FF];
+	static float sin_table(float rad){
+		return table[(uint16_t)(rad * RAD_TO_ANGLE) & 0x3FF];
 	}
-	float cos_t(float rad){
-		return table[((uint16_t)(rad * angle_rad)+COSP) & 0x3FF];
+	static float cos_table(float rad){
+		return table[((uint16_t)(rad * RAD_TO_ANGLE)+PHASE_90) & 0x3FF];
 	}
-
-	void dq_from_uvw(uvw_t input,uint16_t deg_e,dq_t *out);
-	void dq_from_uvw(uvw_t input,sincos_t param,dq_t *out);
-	void uvw_from_dq(dq_t input,uint16_t deg_e,uvw_t *out);
-	void uvw_from_dq(dq_t input,sincos_t param,uvw_t *out);
+	static int rad_to_angle(float rad){
+		return rad * RAD_TO_ANGLE;
+	}
+	static float angle_to_rad(int angle){
+		return angle * ANGLE_TO_RAD;
+	}
 };
 
+//PID/////////////////////////////////////////////////////////////
 class PID{
 private:
-	const float kp = 0;
-	const float ki = 0;
-	const float kd = 0;
+	const bool limit_enable;
+	const float pid_freq;
+	float kp = 0;
+	float ki = 0;
+	float kd = 0;
 	float error = 0;
 	float error_sum = 0;
 	float old_error = 0;
 
-	const float out_min = 0;
-	const float out_max = 0;
+	//output limit
+	float out_min = 0;
+	float out_max = 0;
 public:
-	PID(float _kp,float _ki,float _kd,float min,float max)
-	:kp(_kp),ki(_ki),kd(_kd),out_min(min),out_max(max){}
-
+	PID(bool limit,float _pid_freq):limit_enable(limit),pid_freq(_pid_freq){}
 	float calc(float target,float feedback);
+
+	//inline functions
+	void set_gain(float _kp,float _ki,float _kd){
+		kp = _kp;
+
+		ki = _ki/pid_freq;
+		kd = _kd*pid_freq;
+	}
+	void set_limit(float min,float max){
+		out_min = min;
+		out_max = max;
+	}
 	void reset(void){
 		error = 0;
 		error_sum = 0;
 		old_error = 0;
-	};
+	}
 };
 
-
+//filters/////////////////////////////////////////////////////////////
 class LPF{
 private:
 	float data = 0;
-	float k = 0;
+	const float k = 0;
 public:
 	LPF(float _k):k(_k){}
 	float calc(float input){
@@ -116,9 +130,11 @@ public:
 class HPF{
 private:
 	float data = 0;
-	float k = 0;
+	const float k = 0;
 public:
 	HPF(float _k):k(_k){}
+
+	//inline functions
 	float calc(float input){
 		data = input*k+(1.0-k)*data;
 		return input - data;

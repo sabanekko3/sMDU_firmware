@@ -12,10 +12,8 @@
 #include "pwm.hpp"
 #include "motor_math.hpp"
 
-class DRIVER{
+class DRIVER : motor_math{
 private:
-	motor_math& math;
-
 	PWM& pwm_u;
 	PWM& pwm_v;
 	PWM& pwm_w;
@@ -25,9 +23,9 @@ private:
 
 public:
 	DRIVER(PWM &_pwm_u,PWM &_pwm_v,PWM &_pwm_w,
-			GPIO_TypeDef *_en_port,uint16_t _en_pin, motor_math &_math)
+			GPIO_TypeDef *_en_port,uint16_t _en_pin)
 		: pwm_u(_pwm_u),pwm_v(_pwm_v),pwm_w(_pwm_w),
-		  	  en_port(_en_port),en_pin(_en_pin),math(_math){}
+		  	  en_port(_en_port),en_pin(_en_pin){}
 
 	void out(int angle,float power);
 	void out(uvw_t uvw);

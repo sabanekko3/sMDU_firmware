@@ -6,8 +6,9 @@
  */
 #include "motor.hpp"
 
+
 void MOTOR::init(void){
-	//pwm driver set
+	//pwm driver setting
 	driver.pwms_start();
 
 	//adc start
@@ -68,6 +69,10 @@ void MOTOR::init(void){
 	enc.search_origin(0);
 
 	enc.calc_param();
+
+	//gain setting
+	pid_d.set_gain(0.01,5,0);
+	pid_q.set_gain(0.01,5,0);
 }
 
 void MOTOR::print_debug(void){
@@ -81,25 +86,24 @@ void MOTOR::print_debug(void){
 	//printf("%d\r\n",enc.get_e_angle_sum());
 	//printf("%d\r\n",enc.get_e_angle());
 	//printf("%d,%d,%d\r\n",adc.get_raw(ADC_data::U_I),adc.get_raw(ADC_data::V_I));
-
+	//printf("%4.3f\r\n",i_dq_target.q);
 }
 
-PID pid_d(0.0005,0.0005,0,-0.9,0.9);
-PID pid_q(0.0005,0.0005,0,-0.9,0.9);
+
 void MOTOR::control(void){
-	static float _angle = 0;
 	i_uvw = adc.get_i_uvw();
 
-	math.dq_from_uvw(i_uvw,enc.get_e_sincos(), &i_dq);
+	dq_from_uvw(i_uvw,enc.get_e_sincos(), &i_dq);
 
 	v_dq.d = pid_d.calc(i_dq_target.d,i_dq.d);
 	v_dq.q = pid_q.calc(i_dq_target.q,i_dq.q);
 //	v_dq.d = 0.0f;
 //	v_dq.q = 0.05f;
 
-	math.uvw_from_dq(v_dq,enc.get_e_sincos(), &v_uvw);
+	uvw_from_dq(v_dq,enc.get_e_sincos(), &v_uvw);
 	driver.out(v_uvw);
 
+//	static float _angle = 0;
 //	driver.out(angle_e,0.05f);
 //	_angle += 1;
 //	angle_e = (int)_angle;

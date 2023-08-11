@@ -8,6 +8,8 @@
 
 #include "../driver/motor_math.hpp"
 
+float motor_math::table[TABLE_SIZE]={0};
+
 motor_math::motor_math(void){
 	for (int i = 0; i < TABLE_SIZE; i++) {
 		float rad = (float)i/(float)TABLE_SIZE * 2*M_PI;
@@ -21,8 +23,8 @@ motor_math::motor_math(void){
 }
 
 void motor_math::dq_from_uvw(uvw_t input,uint16_t angle_e,dq_t *out){
-	float sin = sin_t(angle_e);
-	float cos = cos_t(angle_e);
+	float sin = sin_table(angle_e);
+	float cos = cos_table(angle_e);
 
 	//clarke
 	ab_t ab_data;
@@ -40,8 +42,8 @@ void motor_math::dq_from_uvw(uvw_t input,sincos_t param,dq_t *out){
 }
 
 void motor_math::uvw_from_dq(dq_t input,uint16_t angle_e,uvw_t *out){
-	float sin = sin_t(angle_e);
-	float cos = cos_t(angle_e);
+	float sin = sin_table(angle_e);
+	float cos = cos_table(angle_e);
 
 	//inv park
 	ab_t ab_data;
@@ -78,14 +80,16 @@ float PID::calc(float target,float feedback){
 
 	float out = p+i+d;
 
-	if(out < out_min){
-		out = out_min;
-		error_sum = error_sum_old;
-	}
-	if(out_max < out){
-		out = out_max;
-		error_sum = error_sum_old;
-	}
 
+	if(limit_enable){
+		if(out < out_min){
+			out = out_min;
+			error_sum = error_sum_old;
+		}
+		if(out_max < out){
+			out = out_max;
+			error_sum = error_sum_old;
+		}
+	}
 	return out;
 }
