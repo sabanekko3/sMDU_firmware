@@ -66,7 +66,7 @@ void motor_math::uvw_from_dq(dq_t input,sincos_t param,uvw_t *out){
 
 //PID/////////////////////////////////////////////////////////////////////////
 float PID::calc(float target,float feedback){
-	error = feedback - target;
+	error = target - feedback;
 	float p = error * kp;
 
 	float error_sum_old = error_sum;

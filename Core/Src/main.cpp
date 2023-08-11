@@ -212,8 +212,7 @@ int main(void)
 	  if(can.rx_available()){
 		  can.rx(data);
 		  if(data.id == 0b1){
-			 dq_target.q = *(float*)(void*)data.data;
-
+			 dq_target.q = *reinterpret_cast<float*>(data.data);
 		  }
 	  }
 	  motor.set_dq_current(dq_target);

@@ -84,8 +84,8 @@ void MOTOR::print_debug(void){
 
 }
 
-PID pid_d(-0.0005,-0.0005,0,-0.9,0.9);
-PID pid_q(-0.0005,-0.0005,0,-0.9,0.9);
+PID pid_d(0.0005,0.0005,0,-0.9,0.9);
+PID pid_q(0.0005,0.0005,0,-0.9,0.9);
 void MOTOR::control(void){
 	static float _angle = 0;
 	i_uvw = adc.get_i_uvw();
