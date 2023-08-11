@@ -20,7 +20,7 @@
 #define TIM7_INT
 #define TIM7_FRQ 10000
 
-enum class borard_reg{
+enum class REG_ID{
 	CAN_ID,             //r (set via UART)
 	MOTOR_TYPE,         //r/w
 	CONTROL_MODE,       //r/w
@@ -35,14 +35,16 @@ enum class borard_reg{
 	BATT_VOL            //r
 };
 
+typedef board_registers{
+
+};
+
 enum class motor_type{
 	DC,
 	FOC,
 	BLDC_FORCED_COMM,
 	FOC_SENSORLESS,
 };
-
-
 
 enum class PHASE{
 	U,
