@@ -65,6 +65,45 @@ void motor_math::uvw_from_dq(dq_t input,sincos_t param,uvw_t *out){
 	out->w = -out->u - out->v;
 }
 
+float motor_math::fast_atan2_rad(float _y,float _x){
+    float x = abs(_x);
+    float y = abs(_y);
+    float xy_ratio;
+    bool x_is_large;
+
+    x_is_large = y < x;
+
+    if (x_is_large){
+        xy_ratio = y / x;
+    }else{
+        xy_ratio = x / y;
+    }
+
+    float rad = xy_ratio * ( xy_ratio * ( xy_ratio * (0.144614 *  xy_ratio - 0.3508) - 0.010117) + 1);
+    //float rad = xy_ratio * ( xy_ratio * (-0.07815 * xy_ratio - 0.16642) + 1.028176);
+
+    if (x_is_large) {
+        if (_x > 0) {
+            if (_y < 0)rad *= -1;
+        }
+        if (_x < 0) {
+            if (_y > 0)rad = M_PI - rad;
+            if (_y < 0)rad = rad - M_PI;
+        }
+    }
+
+    if (!x_is_large) {
+        if (_x > 0) {
+            if (_y > 0) rad = M_PI_2 - rad;
+            if (_y < 0) rad = rad - M_PI_2;
+        }
+        if (_x < 0) {
+            if (_y > 0) rad = rad + M_PI_2;
+        if (_y < 0) rad = -rad - M_PI_2;
+        }
+    }
+  return rad;
+}
 
 //PID/////////////////////////////////////////////////////////////////////////
 float PID::calc(float target,float feedback){

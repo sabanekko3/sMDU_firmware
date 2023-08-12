@@ -53,6 +53,7 @@ public:
 	static void uvw_from_dq(dq_t input,uint16_t deg_e,uvw_t *out);
 	static void uvw_from_dq(dq_t input,sincos_t param,uvw_t *out);
 
+	static float fast_atan2_rad(float _x,float _y);
 	//inline functions
 	static float sin_table(int angle){
 		return table[angle & 0x3FF];
@@ -71,6 +72,11 @@ public:
 	}
 	static float angle_to_rad(int angle){
 		return angle * ANGLE_TO_RAD;
+	}
+	static int fast_atan2_angle(float _x,float _y){
+		float rad = fast_atan2_rad(_x,_y);
+		if(rad < 0) rad = 2*M_PI + rad;
+		return rad * RAD_TO_ANGLE;
 	}
 };
 
