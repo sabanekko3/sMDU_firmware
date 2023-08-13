@@ -24,7 +24,7 @@ void MOTOR::init(void){
 	motor_R = measure_R(0.5);
 	motor_L = measure_L(motor_R,0.5);
 
-	printf("R:%f[Ohm],L:%f[mH]\r\n",motor_R,motor_L*1000);
+	printf("R:%f[Ohm],L:%f[uH]\r\n",motor_R,motor_L*1000000);
 
 	//gain setting
 	pid_d.set_gain(0.01,5,0);
@@ -138,7 +138,7 @@ float MOTOR::measure_R(float duty){
 
 	float R = 0.0f;
 	for(int i = 0; i < 16; i++){
-		R += (adc.get_power_v()*(duty/2)) /adc.get_i_uvw().u;
+		R += (adc.get_power_v()*(duty*0.5)) /adc.get_i_uvw().u;
 		HAL_Delay(1);
 	}
 
@@ -150,24 +150,29 @@ float MOTOR::measure_R(float duty){
 
 
 float MOTOR::measure_L(float R,float duty){
-	float i_th = (adc.get_power_v()*duty/2)/(R*3/2) * (1-1/M_E);
-	driver.out({duty,0,0});
+	driver.out({0,0,0});
+	HAL_Delay(100);
 
-	__HAL_TIM_SET_COUNTER(&htim17,0);
-	uint16_t start_timer_count = __HAL_TIM_GET_COUNTER(&htim17);
 
-	//wait 50ms
-	uint16_t timer_count_limit = start_timer_count + 50 * 1000;
+	R *= 3/2;
+	float i_th = (adc.get_power_v()*duty*0.5)/R * (1-1/M_E) + adc.get_i_uvw().u;
+
+	//limit:50ms
+	uint16_t timer_count_limit = 50 * 1000;
 	uint16_t end_count = 0;
 
-	while(adc.get_i_uvw().u > i_th){
-		if(__HAL_TIM_GET_COUNTER(&htim17) > timer_count_limit){
-			end_count = __HAL_TIM_GET_COUNTER(&htim17);
+	driver.out({duty,0,0});
+	__HAL_TIM_SET_COUNTER(&htim17,0);
+
+	while(adc.get_i_uvw().u < i_th){
+		end_count = __HAL_TIM_GET_COUNTER(&htim17);
+
+		if(timer_count_limit < end_count){
 			break;
 		}
 	}
 
-	float L = (float)(end_count - start_timer_count)/1000000 * R;
+	float L = (float)end_count * 1.0e-06 * R;
 
 	driver.out({0,0,0});
 
