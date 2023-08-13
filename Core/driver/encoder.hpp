@@ -38,7 +38,7 @@ public:
 	void read_start(void);
 	uint16_t get_angle(void);
 
-	void turn_check(void);
+	void check_turn(void);
 
 	//get parameter
 	uint16_t get_resolution(void){
@@ -79,9 +79,10 @@ public:
 	sincos_t get_sincos(void);
 
 	//for timer int
-	void turn_check(void);
+	void check_turn(void);
 
-	//paramater read
+
+	//inline functions
 	uint16_t get_raw(HALL_SENS sens){
 		return adc.get_raw(sens);
 	}
@@ -92,10 +93,9 @@ public:
 
 
 //ENCODER/////////////////////////////////////////////////////////////////////////////
-class ENCODER{
+class ENCODER : motor_math{
 private:
 	const int motor_pole;
-	motor_math &math;
 
 	//encoders
 	AS5600 &as5600;
@@ -113,8 +113,8 @@ private:
 
 	uint16_t angle_old = 0;
 public:
-	ENCODER(int _motor_pole,motor_math &_math,AS5600 &_as5600,AB_LINER &_ab_liner)
-	:motor_pole(_motor_pole),math(_math),as5600(_as5600),ab_liner(_ab_liner){
+	ENCODER(int _motor_pole,AS5600 &_as5600,AB_LINER &_ab_liner)
+	:motor_pole(_motor_pole),as5600(_as5600),ab_liner(_ab_liner){
 
 	}
 

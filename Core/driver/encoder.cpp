@@ -23,7 +23,7 @@ uint16_t AS5600::get_angle(void){
 	return (enc_val[0]<<8)|enc_val[1];
 }
 
-void AS5600::turn_check(){
+void AS5600::check_turn(){
 	uint16_t angle = get_angle();
 
 	if((angle > (resolution>>2)) && (angle_old > (resolution>>2)*3)){
@@ -46,7 +46,7 @@ sincos_t AB_LINER::get_sincos(void){
 	return data;
 }
 
-void AB_LINER::turn_check(void){
+void AB_LINER::check_turn(void){
 	sincos_t sincos_data = get_sincos();
 
 	int enc_phase = 0;
@@ -193,7 +193,7 @@ void ENCODER::timer_interrupt_task(void){
 	case ENC_type::UVW_HALL:
 		break;
 	case ENC_type::AB_LINER_HALL:
-		ab_liner.turn_check();
+		ab_liner.check_turn();
 		break;
 	}
 }
@@ -201,7 +201,7 @@ void ENCODER::read_completion_interrupt_task(void){
 	switch(type){
 	case ENC_type::AS5600:
 		as5600.set_flag(true);
-		as5600.turn_check();
+		as5600.check_turn();
 		break;
 	case ENC_type::AS5048:
 		break;
@@ -241,7 +241,7 @@ int ENCODER::get_e_angle(void){
 		if(rad < 0){
 			rad = 2*M_PI+rad;
 		}
-		return (int)(rad*rad_to_angle);
+		return (int)(rad_to_angle(rad));
 		break;
 	}
 	return 0;
@@ -261,7 +261,7 @@ int ENCODER::get_e_angle_sum(void){
 	case ENC_type::UVW_HALL:
 		break;
 	case ENC_type::AB_LINER_HALL:
-		return ab_liner.get_turn_count() * 1024; + get_e_angle();
+		return ab_liner.get_turn_count() * 1024 + get_e_angle();
 		break;
 	}
 	return 0;
@@ -277,8 +277,8 @@ sincos_t ENCODER::get_e_sincos(void){
 		//mechanical angle -> electrical angle
 		angle = ((angle*motor_pole*0x3FF/as5600.get_resolution())&0x3FF);
 
-		data.sin = math.sin_t(angle);
-		data.cos = math.cos_t(angle);
+		data.sin = sin_table(angle);
+		data.cos = cos_table(angle);
 		break;
 
 	case ENC_type::AS5048:

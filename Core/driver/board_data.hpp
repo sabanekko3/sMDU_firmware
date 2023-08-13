@@ -20,34 +20,42 @@
 #define TIM7_INT
 #define TIM7_FRQ 10000
 
-enum class borard_reg{
-	CAN_ID,             //r (set via UART)
-	MOTOR_TYPE,         //r/w
-	CONTROL_MODE,       //r/w
-	ENC_TYPE,           //r/w
-	FOC_GAIN_P,         //r/w
-	FOC_GAIN_I,         //r/w
-	SPD_GAIN_P,         //r/w
-	SPD_GAIN_I,         //r/w
-	SPD_GAIN_D,         //r/w
-	M_POS,              //r
-	I_LIMIT,            //r/w
-	BATT_VOL            //r
-};
-
-enum class motor_type{
-	DC,
-	FOC,
-	BLDC_FORCED_COMM,
-	FOC_SENSORLESS,
-};
-
-
-
 enum class PHASE{
 	U,
 	V,
 	W
+};
+
+enum class REG_ID{
+	CAN_ID,             //r (set via UART)
+	MOTOR_TYPE,         //r/w
+	ENC_TYPE,           //r/w
+	BATT_VOL,            //r
+	FOC_GAIN_PI,         //r/w
+	FOC_GAIN_D,         //r/w
+	DQ_TARGET,
+	DQ_I,
+	SPD_GAIN_PI,         //r/w
+	SPD_GAIN_D,         //r/w
+	SPD_TARGET,
+	SPD,
+	POS,
+	POS_SUM,              //r
+	I_LIMIT,            //r/w
+};
+
+typedef struct{
+	float kp;
+	float ki;
+	float kd;
+}pid_gain_t;
+
+enum class MOTOR_type{
+	NOP,
+	DC,
+	FOC,
+	BLDC_FORCED_COMM,
+	FOC_SENSORLESS,
 };
 
 enum class ENC_type{
@@ -57,5 +65,6 @@ enum class ENC_type{
 	UVW_HALL,
 	AB_LINER_HALL,
 };
+
 
 #endif /* DRIVER_BOARD_DATA_HPP_ */

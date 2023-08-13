@@ -88,8 +88,6 @@ extern "C" {
 	}
 }
 
-motor_math mathlib;
-
 //setup led
 PWM R(&htim2, TIM_CHANNEL_1, 1000,0,1,0,false);
 PWM G(&htim2, TIM_CHANNEL_2, 1000,0,1,0,false);
@@ -100,15 +98,15 @@ PWM U(&htim1, TIM_CHANNEL_3, 1000,-1,1,0.1,true);
 PWM V(&htim1, TIM_CHANNEL_2, 1000,-1,1,0.1,true);
 PWM W(&htim1, TIM_CHANNEL_1, 1000,-1,1,0.1,true);
 
-DRIVER driver(U,V,W,MD_EN_GPIO_Port,MD_EN_Pin,mathlib);
+DRIVER driver(U,V,W,MD_EN_GPIO_Port,MD_EN_Pin);
 
 ADC adc(&hadc1,&hadc2,3.3/(0.05*4096.0),11.0/4096.0*3.3);
 
 AS5600 as5600_enc(&hi2c1);
 AB_LINER ab_liner_enc(adc);
-ENCODER enc(7,mathlib,as5600_enc,ab_liner_enc);
+ENCODER enc(7,as5600_enc,ab_liner_enc);
 
-MOTOR motor(driver,adc,mathlib,enc);
+MOTOR motor(driver,adc,enc);
 
 CAN_COM can(&hcan,CAN_FILTER_FIFO0);
 
@@ -819,12 +817,22 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(MD_EN_GPIO_Port, MD_EN_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_13, GPIO_PIN_RESET);
+
   /*Configure GPIO pin : MD_EN_Pin */
   GPIO_InitStruct.Pin = MD_EN_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(MD_EN_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PA13 */
+  GPIO_InitStruct.Pin = GPIO_PIN_13;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PB3 */
   GPIO_InitStruct.Pin = GPIO_PIN_3;
