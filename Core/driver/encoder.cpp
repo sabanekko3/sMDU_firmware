@@ -215,7 +215,7 @@ void ENCODER::read_completion_interrupt_task(void){
 	}
 }
 
-int ENCODER::get_e_angle(void){
+uint16_t ENCODER::get_e_angle(void){
 	int angle = 0;
 	int rad = 0.0f;
 	sincos_t sincos_data;
@@ -235,19 +235,13 @@ int ENCODER::get_e_angle(void){
 		break;
 	case ENC_type::AB_LINER_HALL:
 		sincos_data = ab_liner.get_sincos();
-		//arm_atan2_f32(sincos_data.cos,sincos_data.cos);
-		//rad = -atan2(sincos_data.cos,sincos_data.sin);
-		rad = atan2(sincos_data.sin,sincos_data.cos);
-		if(rad < 0){
-			rad = 2*M_PI+rad;
-		}
-		return (int)(rad_to_angle(rad));
+		return fast_atan2_angle(sincos_data.sin,sincos_data.cos);
 		break;
 	}
 	return 0;
 }
 
-int ENCODER::get_e_angle_sum(void){
+int32_t ENCODER::get_e_angle_sum(void){
 	int div_tmp;
 	switch(type){
 	case ENC_type::AS5600:

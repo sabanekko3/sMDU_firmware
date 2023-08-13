@@ -6,6 +6,8 @@
  */
 #include "motor.hpp"
 
+extern TIM_HandleTypeDef htim17;
+
 
 void MOTOR::init(void){
 	//pwm driver setting
@@ -18,57 +20,11 @@ void MOTOR::init(void){
 	//encoder reset
 	enc.init();
 
-	//encoder calibration///////////////
-	//move to origin
-	for(float f = 0; f<0.2f; f+=0.001f){
-		driver.out(0,f);
-		HAL_Delay(1);
-	}
-	driver.out(0,0.2f);
-	HAL_Delay(300);
-	enc.search_origin(0);
+	enc_calibration(0.1);
+	motor_R = measure_R(0.5);
+	motor_L = measure_L(motor_R,0.5);
 
-	//turn foward 360deg
-	for(int i = 0; i < 0x1FF; i++){
-		driver.out(i,0.1f);
-		enc.calibrate(i);
-		HAL_Delay(1);
-	}
-	driver.out(0x200,0.1f);
-	HAL_Delay(300);
-	//enc.search_origin(0x400);
-
-	//turn reverse 360deg
-	for(int i = 0x1FF; i >= 0; i--){
-		driver.out(i,0.1f);
-		enc.calibrate(i);
-		HAL_Delay(1);
-	}
-	driver.out(0,0.1f);
-	HAL_Delay(300);
-	enc.search_origin(0);
-
-	//turn reverse 360deg
-	for(int i = 0; i >= -0x1FF; i--){
-		driver.out(i,0.1f);
-		enc.calibrate(i);
-		HAL_Delay(1);
-	}
-	driver.out(-0x200,0.1f);
-	HAL_Delay(300);
-	//enc.search_origin(-0x400);
-
-	//turn foward 360deg
-	for(int i = -0x1FF; i < 0; i++){
-		driver.out(i,0.1f);
-		enc.calibrate(i);
-		HAL_Delay(1);
-	}
-	driver.out(0,0.1f);
-	HAL_Delay(300);
-	enc.search_origin(0);
-
-	enc.calc_param();
+	printf("R:%f[Ohm],L:%f[mH]\r\n",motor_R,motor_L*1000);
 
 	//gain setting
 	pid_d.set_gain(0.01,5,0);
@@ -76,7 +32,7 @@ void MOTOR::init(void){
 }
 
 void MOTOR::print_debug(void){
-	sincos_t sincos_val = enc.get_e_sincos();
+	//sincos_t sincos_val = enc.get_e_sincos();
 	//printf("%4.3f,%4.3f\r\n",test.d,test.q);
 	//printf("%4.3f,%4.3f,%4.3f,%4.3f\r\n",i_dq.d,i_dq.q,v_dq.d,v_dq.q);
 	//printf("%4.3f,%4.3f,%4.3f,%5.2f,%4.3f,%4.3f\r\n",i_uvw.u,i_uvw.v,i_uvw.w,adc.get_power_v(),i_dq.d,i_dq.q);
@@ -88,7 +44,9 @@ void MOTOR::print_debug(void){
 	//printf("%d,%d,%d\r\n",adc.get_raw(ADC_data::U_I),adc.get_raw(ADC_data::V_I));
 	//printf("%4.3f\r\n",i_dq_target.q);
 	//printf("%4.3f,%4.3f,%4.3f\r\n",sincos_val.sin,sincos_val.cos,fast_atan2_rad(sincos_val.sin,sincos_val.cos));
-	printf("%4.3f,%4.3f,%d\r\n",sincos_val.sin,sincos_val.cos,angle_e);
+	//printf("%4.3f,%4.3f,%d\r\n",sincos_val.sin,sincos_val.cos,angle_e);
+
+	//printf("%d\r\n",__HAL_TIM_GET_COUNTER(&htim17));
 }
 
 
@@ -114,5 +72,105 @@ void MOTOR::control(void){
 //	_angle += 1;
 //	angle_e = (int)_angle;
 	HAL_GPIO_WritePin(GPIOA,GPIO_PIN_13,GPIO_PIN_RESET);
+}
+
+
+void MOTOR::enc_calibration(float duty){
+	//encoder calibration///////////////
+	//move to origin
+	for(float f = 0; f<duty*2; f+=0.001f){
+		driver.out(0,f);
+		HAL_Delay(1);
+	}
+	driver.out(0,duty);
+	HAL_Delay(300);
+	enc.search_origin(0);
+
+	//turn foward 360deg
+	for(int i = 0; i < TABLE_SIZE/2; i++){
+		driver.out(i,duty);
+		enc.calibrate(i);
+		HAL_Delay(1);
+	}
+	driver.out(TABLE_SIZE/2,duty);
+	HAL_Delay(300);
+	//enc.search_origin(0x400);
+
+	//turn reverse 360deg
+	for(int i = TABLE_SIZE/2; i >= 0; i--){
+		driver.out(i,duty);
+		enc.calibrate(i);
+		HAL_Delay(1);
+	}
+	driver.out(0,duty);
+	HAL_Delay(300);
+	enc.search_origin(0);
+
+	//turn reverse 360deg
+	for(int i = 0; i >= -TABLE_SIZE/2; i--){
+		driver.out(i,duty);
+		enc.calibrate(i);
+		HAL_Delay(1);
+	}
+	driver.out(-TABLE_SIZE/2,0.1f);
+	HAL_Delay(300);
+	//enc.search_origin(-0x400);
+
+	//turn foward 360deg
+	for(int i = -TABLE_SIZE/2; i < 0; i++){
+		driver.out(i,duty);
+		enc.calibrate(i);
+		HAL_Delay(1);
+	}
+	driver.out(0,duty);
+	HAL_Delay(300);
+	enc.search_origin(0);
+
+	enc.calc_param();
+
+	driver.out(0,0);
+}
+
+float MOTOR::measure_R(float duty){
+
+	driver.out({duty,0,0});
+	HAL_Delay(100);
+
+	float R = 0.0f;
+	for(int i = 0; i < 16; i++){
+		R += (adc.get_power_v()*(duty/2)) /adc.get_i_uvw().u;
+		HAL_Delay(1);
+	}
+
+	R *= (2.0/3.0) / 16.0;
+	driver.out({0,0,0});
+	return R;
+}
+
+
+
+float MOTOR::measure_L(float R,float duty){
+	float i_th = (adc.get_power_v()*duty/2)/(R*3/2) * (1-1/M_E);
+	driver.out({duty,0,0});
+
+	__HAL_TIM_SET_COUNTER(&htim17,0);
+	uint16_t start_timer_count = __HAL_TIM_GET_COUNTER(&htim17);
+
+	//wait 50ms
+	uint16_t timer_count_limit = start_timer_count + 50 * 1000;
+	uint16_t end_count = 0;
+
+	while(adc.get_i_uvw().u > i_th){
+		if(__HAL_TIM_GET_COUNTER(&htim17) > timer_count_limit){
+			end_count = __HAL_TIM_GET_COUNTER(&htim17);
+			break;
+		}
+	}
+
+	float L = (float)(end_count - start_timer_count)/1000000 * R;
+
+	driver.out({0,0,0});
+
+	return L*2/3;
 }
 

@@ -132,8 +132,8 @@ public:
 	void read_completion_interrupt_task(void);
 
 	//e_angle:電気角
-	int get_e_angle(void);
-	int get_e_angle_sum(void);
+	uint16_t get_e_angle(void);
+	int32_t get_e_angle_sum(void);
 
 	sincos_t get_e_sincos(void);
 };

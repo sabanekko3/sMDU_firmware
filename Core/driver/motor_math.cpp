@@ -8,11 +8,11 @@
 
 #include "../driver/motor_math.hpp"
 
-float motor_math::table[TABLE_SIZE]={0};
+float motor_math::table[TABLE_SIZE_4]={0};
 
 motor_math::motor_math(void){
-	for (int i = 0; i < TABLE_SIZE; i++) {
-		float rad = (float)i/(float)TABLE_SIZE * 2*M_PI;
+	for (int i = 0; i < TABLE_SIZE_4; i++) {
+		float rad = angle_to_rad(i);
 #ifdef USE_CMSIS
 		table[i] = arm_sin_f32(rad);
 #else

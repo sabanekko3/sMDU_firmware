@@ -11,6 +11,8 @@
 #include "board_data.hpp"
 
 #define TABLE_SIZE 1024
+#define TABLE_SIZE_2 512
+#define TABLE_SIZE_4 256
 #define PHASE_90 256
 #define PHASE_120 341
 
@@ -41,7 +43,7 @@ typedef struct sincos{
 //motor_math/////////////////////////////////////////////////////////////
 class motor_math{
 private:
-	static float table[TABLE_SIZE];
+	static float table[TABLE_SIZE_4];
 
 	static constexpr float ANGLE_TO_RAD = (2*M_PI)/TABLE_SIZE;
 	static constexpr float RAD_TO_ANGLE = TABLE_SIZE/(2*M_PI);
@@ -54,18 +56,29 @@ public:
 	static void uvw_from_dq(dq_t input,sincos_t param,uvw_t *out);
 
 	static float fast_atan2_rad(float _x,float _y);
+
 	//inline functions
 	static float sin_table(int angle){
-		return table[angle & 0x3FF];
+		angle = angle & 0x3FF;
+		if(angle >= 768){
+			return -table[TABLE_SIZE - angle];
+		}else if(angle >= 512){
+			return -table[angle - TABLE_SIZE_2];
+		}else if(angle >= 256){
+			return table[TABLE_SIZE_2 - angle];
+		}else{
+			return table[angle];
+		}
 	}
+
 	static float cos_table(int angle){
-		return table[(angle+PHASE_90) & 0x3FF];
+		return sin_table(angle + PHASE_90);
 	}
 	static float sin_table(float rad){
-		return table[(uint16_t)(rad * RAD_TO_ANGLE) & 0x3FF];
+		return sin_table(rad_to_angle(rad));
 	}
 	static float cos_table(float rad){
-		return table[((uint16_t)(rad * RAD_TO_ANGLE)+PHASE_90) & 0x3FF];
+		return cos_table(rad_to_angle(rad));
 	}
 	static int rad_to_angle(float rad){
 		return rad * RAD_TO_ANGLE;
@@ -73,7 +86,7 @@ public:
 	static float angle_to_rad(int angle){
 		return angle * ANGLE_TO_RAD;
 	}
-	static int fast_atan2_angle(float _x,float _y){
+	static uint16_t fast_atan2_angle(float _x,float _y){
 		float rad = fast_atan2_rad(_x,_y);
 		if(rad < 0) rad = 2*M_PI + rad;
 		return rad * RAD_TO_ANGLE;
