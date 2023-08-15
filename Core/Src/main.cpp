@@ -189,6 +189,7 @@ int main(void)
   enc.select(ENC_type::AB_LINER_HALL);
 
   HAL_TIM_Base_Start(&htim17); //for measure L
+  motor.set_kv(1000);
   motor.init();
   //encoder timer start
   HAL_TIM_Base_Start_IT(&htim6);

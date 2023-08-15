@@ -40,12 +40,15 @@ void MOTOR::print_debug(void){
 	//printf("%4.3f,%4.3f,%4.3f,%4.3f\r\n",enc.get_e_sincos().sin,enc.get_e_sincos().cos,math.sin_t(angle_e),math.cos_t(angle_e));
 	//for(int i = 0;i<(int)ADC_data::n;i++) printf("%d,",adc.get_raw(i));
 	//printf("%d\r\n",enc.get_e_angle_sum());
+	printf("%4.3f\r\n",motor_speed);
+	//printf("%4.2f,%4.2f,%4.2f,%4.2f\r\n",v_dq.d,v_dq.q,-motor_speed*motor_L*i_dq.q,motor_speed*(motor_L*i_dq.d+motor_Ke));
 	//printf("%d\r\n",enc.get_e_angle());
 	//printf("%d,%d,%d\r\n",adc.get_raw(ADC_data::U_I),adc.get_raw(ADC_data::V_I));
 	//printf("%4.3f\r\n",i_dq_target.q);
 	//printf("%4.3f,%4.3f,%4.3f\r\n",sincos_val.sin,sincos_val.cos,fast_atan2_rad(sincos_val.sin,sincos_val.cos));
 	//printf("%4.3f,%4.3f,%d\r\n",sincos_val.sin,sincos_val.cos,angle_e);
 
+	//printf("%4.3f,%4.3f,%4.3f\r\n",rad_log[top&0x7],rad_log[(top+1)&0x7],rad_diff);
 	//printf("%d\r\n",__HAL_TIM_GET_COUNTER(&htim17));
 }
 
@@ -63,14 +66,29 @@ void MOTOR::control(void){
 //	v_dq.d = 0.0f;
 //	v_dq.q = 0.05f;
 
+
+
+//	if(my_abs(rad_diff)<2.0f && (motor_speed*rad_diff)>=0){
+//		motor_speed = speed_filter.calc(rad_diff*1250);
+//	}
+
+//	if(top>=16){
+//		v_dq.d += -motor_speed*motor_L*i_dq.q;
+//		v_dq.q += motor_speed*(motor_L*i_dq.d);
+//	}
+
+	measure_speed(10000);
 	uvw_from_dq(v_dq,enc_sincos, &v_uvw);
 	driver.out(v_uvw);
 
-	angle_e = fast_atan2_angle(enc_sincos.sin,enc_sincos.cos);
 //	static float _angle = 0;
 //	driver.out(angle_e,0.05f);
 //	_angle += 1;
 //	angle_e = (int)_angle;
+
+
+
+
 	HAL_GPIO_WritePin(GPIOA,GPIO_PIN_13,GPIO_PIN_RESET);
 }
 
@@ -144,7 +162,8 @@ float MOTOR::measure_R(float duty){
 
 	R *= (2.0/3.0) / 16.0;
 	driver.out({0,0,0});
-	return R;
+	motor_R = R;
+	return motor_R;
 }
 
 
@@ -176,6 +195,21 @@ float MOTOR::measure_L(float R,float duty){
 
 	driver.out({0,0,0});
 
-	return L*2/3;
+	motor_L = L*2/3;
+	return motor_L;
 }
 
+float MOTOR::measure_speed(float freq){
+	//measure speed
+	rad_log[top&0x7] = angle_to_rad(enc.get_e_angle_sum());
+	float rad_diff_tmp = rad_log[top&0x7] - rad_log[(top+1)&0x7];
+	top ++;
+
+	if(abs(rad_diff_tmp)<M_PI){
+		rad_diff = rad_diff_tmp;
+	}
+
+	motor_speed = rad_diff*freq*0.125;
+
+	return motor_speed;
+}

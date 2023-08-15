@@ -79,7 +79,7 @@ public:
 	sincos_t get_sincos(void);
 
 	//for timer int
-	void check_turn(void);
+	void check_turn(sincos_t sincos_data);
 
 
 	//inline functions
@@ -93,7 +93,7 @@ public:
 
 
 //ENCODER/////////////////////////////////////////////////////////////////////////////
-class ENCODER : motor_math{
+class ENCODER:motor_math{
 private:
 	const int motor_pole;
 
@@ -112,6 +112,8 @@ private:
 	int16_t origin_search_sum = 0;
 
 	uint16_t angle_old = 0;
+
+
 public:
 	ENCODER(int _motor_pole,AS5600 &_as5600,AB_LINER &_ab_liner)
 	:motor_pole(_motor_pole),as5600(_as5600),ab_liner(_ab_liner){

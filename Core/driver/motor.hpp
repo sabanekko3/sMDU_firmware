@@ -27,7 +27,7 @@ private:
 	//motor parameter
 	float motor_R;
 	float motor_L;
-	float motor_kv;
+	float motor_Ke;
 
 	//FOC control//
 	//dq current PID
@@ -50,12 +50,18 @@ private:
 	float motor_speed;
 	//target
 	float motor_speed_target;
+	LPF speed_filter;
+
+	//for measure speed
+	int32_t top = 0;
+	float rad_log[8] = {0};
+	float rad_diff = 0;
 
 public:
 	MOTOR(DRIVER &_driver,ADC &_adc,ENCODER &_enc)
 		:driver(_driver),adc(_adc),enc(_enc),
 		 pid_d(false,TIM7_FRQ),pid_q(false,TIM7_FRQ),
-		 pid_speed(false,TIM7_FRQ){
+		 pid_speed(false,TIM7_FRQ),speed_filter(0.5){
 	}
 	void init(void);
 
@@ -66,10 +72,16 @@ public:
 	void enc_calibration(float duty);
 	float measure_R(float duty);
 	float measure_L(float R,float duty);
+	float measure_speed(float freq);
+
+	float get_speed_rad(void);
 
 	//inline functions
 	void set_dq_current(dq_t target){
 		i_dq_target = target;
+	}
+	void set_kv(float kv){
+		motor_Ke = 60/(2*M_PI*kv);
 	}
 };
 

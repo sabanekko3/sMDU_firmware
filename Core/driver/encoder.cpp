@@ -46,9 +46,7 @@ sincos_t AB_LINER::get_sincos(void){
 	return data;
 }
 
-void AB_LINER::check_turn(void){
-	sincos_t sincos_data = get_sincos();
-
+void AB_LINER::check_turn(sincos_t sincos_data){
 	int enc_phase = 0;
 	enc_phase |= (sincos_data.sin >= 0.0f) ? 0b01:0b00;
 	enc_phase |= (sincos_data.cos >= 0.0f) ? 0b10:0b00;
@@ -193,7 +191,7 @@ void ENCODER::timer_interrupt_task(void){
 	case ENC_type::UVW_HALL:
 		break;
 	case ENC_type::AB_LINER_HALL:
-		ab_liner.check_turn();
+		ab_liner.check_turn(ab_liner.get_sincos());
 		break;
 	}
 }
@@ -243,6 +241,7 @@ uint16_t ENCODER::get_e_angle(void){
 
 int32_t ENCODER::get_e_angle_sum(void){
 	int div_tmp;
+	sincos_t sincos_data;
 	switch(type){
 	case ENC_type::AS5600:
 		div_tmp = (as5600.get_angle()*motor_pole)/as5600.get_resolution();
@@ -255,7 +254,9 @@ int32_t ENCODER::get_e_angle_sum(void){
 	case ENC_type::UVW_HALL:
 		break;
 	case ENC_type::AB_LINER_HALL:
-		return ab_liner.get_turn_count() * 1024 + get_e_angle();
+		sincos_data = ab_liner.get_sincos();
+		ab_liner.check_turn(sincos_data);
+		return ab_liner.get_turn_count() * 1024 + fast_atan2_angle(sincos_data.sin,sincos_data.cos);
 		break;
 	}
 	return 0;
