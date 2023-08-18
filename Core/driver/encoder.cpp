@@ -8,7 +8,7 @@
 #include "encoder.hpp"
 
 
-//AS5600////////////////////////////////////////////////////////////sss//////////////////
+//AS5600//////////////////////////////////////////////////////////////////////////////
 void AS5600::init(void){
 	uint8_t txdata = 0x0c;
 	HAL_I2C_Master_Transmit(i2c, as5600_id<<1, &txdata, 1, 100);
@@ -19,12 +19,8 @@ void AS5600::read_start(void){
 	HAL_I2C_Master_Receive_IT(i2c, as5600_id<<1, enc_val, 2);
 }
 
-uint16_t AS5600::get_angle(void){
-	return (enc_val[0]<<8)|enc_val[1];
-}
-
-void AS5600::check_turn(){
-	uint16_t angle = get_angle();
+void AS5600::check_turn(void){
+	uint16_t angle = get_raw();
 
 	if((angle > (resolution>>2)) && (angle_old > (resolution>>2)*3)){
 		turn_count ++;
@@ -33,6 +29,7 @@ void AS5600::check_turn(){
 	}
 	angle_old = angle;
 }
+
 //AB LINER HALL SENSOR(for robotmaster)///////////////////////////////////////////////
 void AB_LINER::set_param(HALL_SENS sens,int16_t min,int16_t max){
 	raw_to_regular[(int)sens] = 2.0f/(float)(max-min);
@@ -83,7 +80,17 @@ void ENCODER::init(void){
 void ENCODER::calibrate(const int angle){
 	switch(type){
 	case ENC_type::AS5600:
-		//nop
+		as5600.read_start();
+		while(!as5600.is_available());
+
+		if(angle == 0){
+			if(calibration_count == 0){
+				origin = as5600.get_raw();
+			}else{
+				origin_search_sum += as5600.get_raw()-origin;
+			}
+			calibration_count ++;
+		}
 		break;
 	case ENC_type::AS5048:
 		//as5048.init();
@@ -108,43 +115,15 @@ void ENCODER::calibrate(const int angle){
 		ab_liner.set_param(HALL_SENS::H2,min[(int)HALL_SENS::H2], max[(int)HALL_SENS::H2]);
 		break;
 	}
-}
-void ENCODER::search_origin(int angle){
-	switch(type){
-	case ENC_type::AS5600:
 
-		if(angle == 0){
-			as5600.read_start();
-			while(!as5600.is_available());
-			int16_t angle = as5600.get_angle() - origin;
-			if(origin_search_count == 0){
-				origin = angle;
-			}else{
-				angle |= (angle&0x200)?0xFC00:0;
-				origin_search_sum += angle;
-			}
-		}
-		break;
 
-	case ENC_type::AS5048:
-		//as5048.init();
-		break;
-	case ENC_type::ABX:
-		break;
-	case ENC_type::UVW_HALL:
-		break;
-	case ENC_type::AB_LINER_HALL:
-		break;
-	}
-	origin_search_count ++;
 }
 void ENCODER::calc_param(void){
-	origin_search_count = 0;
 	switch(type){
 	case ENC_type::AS5600:
 
-		if(origin_search_count != 0){
-			origin += origin_search_sum / origin_search_count;
+		if(calibration_count != 0){
+			origin += origin_search_sum / calibration_count;
 		}
 
 		break;
@@ -221,7 +200,7 @@ uint16_t ENCODER::get_e_angle(void){
 	switch(type){
 	case ENC_type::AS5600:
 
-		angle = (as5600.get_angle()-origin)&0x3FF;
+		angle = (as5600.get_raw()-origin)&0x3FF;
 		return ((angle*motor_pole*0x3FF/as5600.get_resolution())&0x3FF);
 		break;
 
@@ -244,7 +223,7 @@ int32_t ENCODER::get_e_angle_sum(void){
 	sincos_t sincos_data;
 	switch(type){
 	case ENC_type::AS5600:
-		div_tmp = (as5600.get_angle()*motor_pole)/as5600.get_resolution();
+		div_tmp = (as5600.get_raw()*motor_pole)/as5600.get_resolution();
 		return (as5600.get_count()*motor_pole+div_tmp)*1024*motor_pole + get_e_angle();
 		break;
 	case ENC_type::AS5048:
@@ -256,7 +235,7 @@ int32_t ENCODER::get_e_angle_sum(void){
 	case ENC_type::AB_LINER_HALL:
 		sincos_data = ab_liner.get_sincos();
 		ab_liner.check_turn(sincos_data);
-		return ab_liner.get_turn_count() * 1024 + fast_atan2_angle(sincos_data.sin,sincos_data.cos);
+		return (float)ab_liner.get_turn_count()*1024 + fast_atan2_angle(sincos_data.sin,sincos_data.cos);
 		break;
 	}
 	return 0;
@@ -267,7 +246,7 @@ sincos_t ENCODER::get_e_sincos(void){
 	int angle = 0;
 	switch(type){
 	case ENC_type::AS5600:
-		angle = (as5600.get_angle()-origin)&0x3FF;
+		angle = (as5600.get_raw()-origin)&0x3FF;
 
 		//mechanical angle -> electrical angle
 		angle = ((angle*motor_pole*0x3FF/as5600.get_resolution())&0x3FF);

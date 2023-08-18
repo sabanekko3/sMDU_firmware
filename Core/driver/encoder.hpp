@@ -36,11 +36,12 @@ public:
 
 	void init(void);
 	void read_start(void);
-	uint16_t get_angle(void);
-
 	void check_turn(void);
 
 	//get parameter
+	uint16_t get_raw(void){
+		return (enc_val[0]<<8)|enc_val[1];
+	}
 	uint16_t get_resolution(void){
 		return resolution;
 	}
@@ -108,8 +109,8 @@ private:
 	int16_t origin = 0;
 
 	//for search origin
-	int origin_search_count = 0;
-	int16_t origin_search_sum = 0;
+	int32_t calibration_count = 0;
+	int32_t origin_search_sum = 0;
 
 	uint16_t angle_old = 0;
 
@@ -125,7 +126,6 @@ public:
 	}
 	void init(void);
 	void calibrate(const int angle);
-	void search_origin(const int angle);
 	void calc_param(void);
 
 	bool is_available(void);

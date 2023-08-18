@@ -118,19 +118,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 		motor.control();
 #endif
 	}else if(htim == &htim6){
-		static float b_val = 0;
 		enc.timer_interrupt_task();
-		B.out(b_val);
-		b_val = b_val < 0.3 ? 0.5 : 0;
 	}
 }
 
 
 void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c){
 	enc.read_completion_interrupt_task();
-	static float g_val = 0;
-	G.out(g_val);
-	g_val = g_val < 0.3 ? 0.5 : 0;
 }
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
@@ -189,7 +183,7 @@ int main(void)
   enc.select(ENC_type::AB_LINER_HALL);
 
   HAL_TIM_Base_Start(&htim17); //for measure L
-  motor.set_kv(1000);
+  motor.set_kv(1000*7);
   motor.init();
   //encoder timer start
   HAL_TIM_Base_Start_IT(&htim6);
@@ -203,7 +197,6 @@ int main(void)
   can.set_filter_free();
   can_frame_t data;
   dq_t dq_target = {0,0};
-  printf("start\r\n");
 
   /* USER CODE END 2 */
 
@@ -224,15 +217,6 @@ int main(void)
 	  motor.set_dq_current(dq_target);
 	  motor.print_debug();
 	  HAL_Delay(1);
-
-//	  if(can.rx_available()){
-//		  can.rx(data);
-//		  printf("id:%x  ",data.id);
-//		  for(uint32_t i = 0; i < 8; i++){
-//			  printf("[%d]:%d ",i,data.data[i]);
-//		  }
-//		  printf("\r\n");
-//	  }
 
   }
   /* USER CODE END 3 */

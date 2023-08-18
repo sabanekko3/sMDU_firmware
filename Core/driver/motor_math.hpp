@@ -10,6 +10,8 @@
 
 #include "board_data.hpp"
 
+//angle:電気角などを表すのに使用
+
 #define TABLE_SIZE 1024
 #define TABLE_SIZE_2 512
 #define TABLE_SIZE_4 256
@@ -55,22 +57,10 @@ public:
 	static void uvw_from_dq(dq_t input,uint16_t deg_e,uvw_t *out);
 	static void uvw_from_dq(dq_t input,sincos_t param,uvw_t *out);
 
-	static float fast_atan2_rad(float _x,float _y);
+	static float fast_atan2_rad(const float _x,const float _y);
+	static float sin_table(int angle);
 
 	//inline functions
-	static float sin_table(int angle){
-		angle = angle & 0x3FF;
-		if(angle > 768){
-			return -table[TABLE_SIZE - angle];
-		}else if(angle > 512){
-			return -table[angle - TABLE_SIZE_2];
-		}else if(angle > 256){
-			return table[TABLE_SIZE_2 - angle];
-		}else{
-			return table[angle];
-		}
-	}
-
 	static float cos_table(int angle){
 		return sin_table(angle + PHASE_90);
 	}
@@ -131,14 +121,16 @@ public:
 };
 
 //filters/////////////////////////////////////////////////////////////
+template<class T>
 class LPF{
 private:
-	float data = 0;
-	const float k = 0;
+	T data = 0;
+	const T k = 0;
 public:
-	LPF(float _k):k(_k){}
-	float calc(float input){
-		data = input*k+(1.0-k)*data;
+	//set gain 0~100
+	LPF(T _k):k(_k){}
+	T calc(T input){
+		data = input*k+(100-k)*data;
 		return data;
 	}
 	void reset(void){
@@ -146,27 +138,23 @@ public:
 	}
 };
 
+template<class T>
 class HPF{
 private:
-	float data = 0;
-	const float k = 0;
+	T data = 0;
+	const T k = 0;
 public:
-	HPF(float _k):k(_k){}
+	HPF(T _k):k(_k){}
 
 	//inline functions
-	float calc(float input){
-		data = input*k + (1.0-k)*data;
+	T calc(T input){
+		data = input*k + (100-k)*data;
 		return input - data;
 	}
 	void reset(void){
 		data = 0;
 	}
 };
-
-template<typename T>
-inline T my_abs(T d){
-	return d<0?-d:d;
-}
 
 
 #endif /* DRIVER_MOTOR_MATH_HPP_ */

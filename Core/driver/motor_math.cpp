@@ -11,14 +11,9 @@
 float motor_math::table[TABLE_SIZE_4+1]={0};
 
 motor_math::motor_math(void){
-	for (int i = 0; i < TABLE_SIZE_4+1; i++) {
+	for(int i = 0; i < TABLE_SIZE_4+1; i++) {
 		float rad = angle_to_rad(i);
-#ifdef USE_CMSIS
 		table[i] = arm_sin_f32(rad);
-#else
-		table[i] = sin(rad);
-#endif
-
 	}
 }
 
@@ -65,7 +60,7 @@ void motor_math::uvw_from_dq(dq_t input,sincos_t param,uvw_t *out){
 	out->w = -out->u - out->v;
 }
 
-float motor_math::fast_atan2_rad(float _y,float _x){
+float motor_math::fast_atan2_rad(const float _y,const float _x){
     float x = abs(_x);
     float y = abs(_y);
     float xy_ratio;
@@ -99,10 +94,23 @@ float motor_math::fast_atan2_rad(float _y,float _x){
         }
         if (_x < 0) {
             if (_y > 0) rad = rad + M_PI_2;
-        if (_y < 0) rad = -rad - M_PI_2;
+            if (_y < 0) rad = -rad - M_PI_2;
         }
     }
   return rad;
+}
+
+float motor_math::sin_table(int angle){
+	angle = angle & 0x3FF;
+	if(angle > 768){
+		return -table[TABLE_SIZE - angle];
+	}else if(angle > 512){
+		return -table[angle - TABLE_SIZE_2];
+	}else if(angle > 256){
+		return table[TABLE_SIZE_2 - angle];
+	}else{
+		return table[angle];
+	}
 }
 
 //PID/////////////////////////////////////////////////////////////////////////

@@ -37,8 +37,9 @@ private:
 	//current data
 	uvw_t i_uvw;
 	dq_t i_dq;
-	uvw_t v_uvw;
+	uvw_t pwm_uvw;
 	dq_t v_dq;
+	dq_t pwm_dq;
 
 	//target
 	dq_t i_dq_target;
@@ -47,21 +48,21 @@ private:
 	//speed PID
 	PID pid_speed;
 	//current data
-	float motor_speed;
+	float motor_speed_rad;
 	//target
 	float motor_speed_target;
-	LPF speed_filter;
+	LPF<int> speed_filter;
 
 	//for measure speed
 	int32_t top = 0;
-	float rad_log[8] = {0};
-	float rad_diff = 0;
+	int32_t angle_log[8] = {0};
+	int32_t angle_diff = 0;
 
 public:
 	MOTOR(DRIVER &_driver,ADC &_adc,ENCODER &_enc)
 		:driver(_driver),adc(_adc),enc(_enc),
 		 pid_d(false,TIM7_FRQ),pid_q(false,TIM7_FRQ),
-		 pid_speed(false,TIM7_FRQ),speed_filter(0.5){
+		 pid_speed(false,TIM7_FRQ),speed_filter(10){
 	}
 	void init(void);
 
@@ -72,9 +73,7 @@ public:
 	void enc_calibration(float duty);
 	float measure_R(float duty);
 	float measure_L(float R,float duty);
-	float measure_speed(float freq);
-
-	float get_speed_rad(void);
+	float measure_speed_rad(float freq);
 
 	//inline functions
 	void set_dq_current(dq_t target){
