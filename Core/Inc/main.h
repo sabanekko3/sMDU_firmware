@@ -30,6 +30,20 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f3xx_hal.h"
 
+#include "stm32f3xx_ll_adc.h"
+#include "stm32f3xx_ll_dma.h"
+#include "stm32f3xx_ll_i2c.h"
+#include "stm32f3xx_ll_rcc.h"
+#include "stm32f3xx_ll_bus.h"
+#include "stm32f3xx_ll_system.h"
+#include "stm32f3xx_ll_exti.h"
+#include "stm32f3xx_ll_cortex.h"
+#include "stm32f3xx_ll_utils.h"
+#include "stm32f3xx_ll_pwr.h"
+#include "stm32f3xx_ll_tim.h"
+#include "stm32f3xx_ll_usart.h"
+#include "stm32f3xx_ll_gpio.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -50,8 +64,6 @@ extern "C" {
 
 /* USER CODE END EM */
 
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
@@ -60,21 +72,21 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define LED_B_Pin GPIO_PIN_0
+#define LED_B_Pin LL_GPIO_PIN_0
 #define LED_B_GPIO_Port GPIOA
-#define LED_G_Pin GPIO_PIN_1
+#define LED_G_Pin LL_GPIO_PIN_1
 #define LED_G_GPIO_Port GPIOA
-#define LED_R_Pin GPIO_PIN_2
+#define LED_R_Pin LL_GPIO_PIN_2
 #define LED_R_GPIO_Port GPIOA
-#define POWER_V_Pin GPIO_PIN_5
+#define POWER_V_Pin LL_GPIO_PIN_5
 #define POWER_V_GPIO_Port GPIOA
-#define W_I_Pin GPIO_PIN_6
+#define W_I_Pin LL_GPIO_PIN_6
 #define W_I_GPIO_Port GPIOA
-#define U_I_Pin GPIO_PIN_7
+#define U_I_Pin LL_GPIO_PIN_7
 #define U_I_GPIO_Port GPIOA
-#define V_I_Pin GPIO_PIN_0
+#define V_I_Pin LL_GPIO_PIN_0
 #define V_I_GPIO_Port GPIOB
-#define MD_EN_Pin GPIO_PIN_1
+#define MD_EN_Pin LL_GPIO_PIN_1
 #define MD_EN_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
