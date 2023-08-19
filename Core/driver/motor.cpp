@@ -14,8 +14,8 @@ void MOTOR::init(void){
 	driver.pwms_start();
 
 	//adc start
-	adc.init();
-	adc.dma_start();
+	analog.init();
+	analog.dma_start();
 
 	//encoder reset
 	enc.init();
@@ -24,10 +24,10 @@ void MOTOR::init(void){
 	motor_R = measure_R(0.5);
 	motor_L = measure_L(motor_R,0.5);
 
-	printf("R:%f[Ohm],L:%f[mH]\r\n",motor_R,motor_L*1000);
+	//printf("R:%f[Ohm],L:%f[mH]\r\n",motor_R,motor_L*1000);
 
 	//gain setting
-	float kp = motor_R/adc.get_power_v();
+	float kp = motor_R/analog.get_power_v();
 	pid_d.set_gain(kp,5,0);
 	pid_q.set_gain(kp,5,0);
 
@@ -40,7 +40,7 @@ void MOTOR::print_debug(void){
 	//sincos_t sincos_val = enc.get_e_sincos();
 	//printf("%4.3f,%4.3f\r\n",test.d,test.q);
 	//printf("%4.3f,%4.3f,%4.3f,%4.3f\r\n",i_dq.d,i_dq.q,v_dq.d,v_dq.q);
-	printf("%4.3f,%4.3f,%4.3f,%5.2f,%4.3f,%4.3f\r\n",i_uvw.u,i_uvw.v,i_uvw.w,adc.get_power_v(),i_dq.d,i_dq.q);
+	//printf("%4.3f,%4.3f,%4.3f,%5.2f,%4.3f,%4.3f\r\n",i_uvw.u,i_uvw.v,i_uvw.w,adc.get_power_v(),i_dq.d,i_dq.q);
 	//printf("%4.3f,%4.3f,%4.3f\r\n",i_uvw.u,i_uvw.v,i_uvw.w);
 	//printf("%4.3f,%4.3f,%4.3f,%4.3f\r\n",enc.get_e_sincos().sin,enc.get_e_sincos().cos,math.sin_t(angle_e),math.cos_t(angle_e));
 	//for(int i = 0;i<(int)ADC_data::n;i++) printf("%d,",adc.get_raw(i));
@@ -59,39 +59,40 @@ void MOTOR::print_debug(void){
 
 
 void MOTOR::control(void){
-	HAL_GPIO_WritePin(GPIOA,GPIO_PIN_13,GPIO_PIN_SET);
+	LL_GPIO_SetOutputPin(GPIOA,GPIO_PIN_13);
 
-	i_uvw = adc.get_i_uvw();
-	float batt_v_inv = 1.0f/adc.get_power_v();
+	i_uvw = analog.get_i_uvw();
+	float batt_v_inv = 1.0f/analog.get_power_v();
 	sincos_t enc_sincos = enc.get_e_sincos();
 
-	dq_from_uvw(i_uvw,enc_sincos, &i_dq);
-
-	v_dq.d = pid_d.calc(i_dq_target.d,i_dq.d);
-	v_dq.q = pid_q.calc(i_dq_target.q,i_dq.q);
-
-	//anti interference control
-//	v_dq.d += -motor_speed*motor_L*i_dq.q;
-//	v_dq.q += motor_speed*(motor_L*i_dq.d + motor_Ke);
-
-	pwm_dq.d = v_dq.d*batt_v_inv;
-	pwm_dq.q = v_dq.q*batt_v_inv;
-
-	uvw_from_dq(pwm_dq,enc_sincos, &pwm_uvw);
-	driver.out(pwm_uvw);
+//	dq_from_uvw(i_uvw,enc_sincos, &i_dq);
+//
+//	v_dq.d = pid_d.calc(i_dq_target.d,i_dq.d);
+//	v_dq.q = pid_q.calc(i_dq_target.q,i_dq.q);
+//
+//	//anti interference control
+////	v_dq.d += -motor_speed*motor_L*i_dq.q;
+////	v_dq.q += motor_speed*(motor_L*i_dq.d + motor_Ke);
+//
+//	pwm_dq.d = v_dq.d*batt_v_inv;
+//	pwm_dq.q = v_dq.q*batt_v_inv;
+//
+//	uvw_from_dq(pwm_dq,enc_sincos, &pwm_uvw);
+//	driver.out(pwm_uvw);
 
 	//
-//	static float _angle = 0;
-//	driver.out(angle_e,0.05f);
-//	_angle += 1;
-//	angle_e = (int)_angle;
-	HAL_GPIO_WritePin(GPIOA,GPIO_PIN_13,GPIO_PIN_RESET);
+	static float _angle = 0;
+	driver.out(angle_e,0.05f);
+	_angle += 1;
+	angle_e = (int)_angle;
+	LL_GPIO_ResetOutputPin(GPIOA,GPIO_PIN_13);
 }
 
 
 void MOTOR::enc_calibration(float duty){
 	//encoder calibration///////////////
 	//move to origin
+	printf("1\r\n");
 	for(float f = 0; f<duty*2; f+=0.001f){
 		driver.out(0,f);
 		HAL_Delay(1);
@@ -99,6 +100,7 @@ void MOTOR::enc_calibration(float duty){
 	driver.out(0,duty);
 	HAL_Delay(300);
 	enc.calibrate(0);
+	printf("2\r\n");
 	//turn foward 360deg
 	for(int i = 0; i < TABLE_SIZE/2; i++){
 		driver.out(i,duty);
@@ -151,7 +153,7 @@ float MOTOR::measure_R(float duty){
 
 	float R = 0.0f;
 	for(int i = 0; i < 16; i++){
-		R += (adc.get_power_v()*(duty*0.5)) /adc.get_i_uvw().u;
+		R += (analog.get_power_v()*(duty*0.5)) /analog.get_i_uvw().u;
 		HAL_Delay(1);
 	}
 
@@ -169,7 +171,7 @@ float MOTOR::measure_L(float R,float duty){
 
 
 	R *= 3/2;
-	float i_th = (adc.get_power_v()*duty*0.5)/R * (1-1/M_E);
+	float i_th = (analog.get_power_v()*duty*0.5)/R * (1-1/M_E);
 
 	//limit:50ms
 	uint16_t timer_count_limit = 50 * 1000;
@@ -178,7 +180,7 @@ float MOTOR::measure_L(float R,float duty){
 	driver.out({duty,0,0});
 	__HAL_TIM_SET_COUNTER(&htim17,0);
 
-	while(adc.get_i_uvw().u < i_th){
+	while(analog.get_i_uvw().u < i_th){
 		timer_count = __HAL_TIM_GET_COUNTER(&htim17);
 
 		if(timer_count_limit < timer_count){

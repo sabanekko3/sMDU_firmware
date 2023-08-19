@@ -38,8 +38,8 @@ void AB_LINER::set_param(HALL_SENS sens,int16_t min,int16_t max){
 
 sincos_t AB_LINER::get_sincos(void){
 	sincos_t data;
-	data.sin = -(float)(adc.get_raw(ADC_data::RBM_H2)+move_to_centor[(int)HALL_SENS::H2])*raw_to_regular[(int)HALL_SENS::H2];
-	data.cos = (float)(adc.get_raw(ADC_data::RBM_H1)+move_to_centor[(int)HALL_SENS::H1])*raw_to_regular[(int)HALL_SENS::H1];
+	data.sin = -(float)(analog.get_raw(ADC_data::RBM_H2)+move_to_centor[(int)HALL_SENS::H2])*raw_to_regular[(int)HALL_SENS::H2];
+	data.cos = (float)(analog.get_raw(ADC_data::RBM_H1)+move_to_centor[(int)HALL_SENS::H1])*raw_to_regular[(int)HALL_SENS::H1];
 	return data;
 }
 

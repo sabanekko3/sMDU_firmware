@@ -10,7 +10,7 @@
 
 #include "board_data.hpp"
 #include "motor_math.hpp"
-#include "adc.hpp"
+#include "analog_sens.hpp"
 
 
 #define USE_AS5600
@@ -65,7 +65,7 @@ enum class HALL_SENS{
 
 class AB_LINER{
 private:
-	ADC &adc;
+	ANALOG_SENS &analog;
 
 	//parametor for get_sincos
 	float raw_to_regular[2]={0};
@@ -74,7 +74,8 @@ private:
 	int32_t turn_count = 0;
 	uint32_t enc_phase_log = 0;
 public:
-	AB_LINER(ADC &_adc):adc(_adc){}
+	AB_LINER(ANALOG_SENS &_analog):analog(_analog){}
+
 	void set_param(HALL_SENS sens,int16_t min,int16_t max);
 
 	sincos_t get_sincos(void);
@@ -85,7 +86,7 @@ public:
 
 	//inline functions
 	uint16_t get_raw(HALL_SENS sens){
-		return adc.get_raw(sens);
+		return analog.get_raw(sens);
 	}
 	int get_turn_count(void){
 		return turn_count;

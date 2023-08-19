@@ -70,24 +70,36 @@ extern "C" {
 }
 
 //setup led
-PWM R(&htim2, TIM_CHANNEL_1, 1000,0,1,0,false);
-PWM G(&htim2, TIM_CHANNEL_2, 1000,0,1,0,false);
-PWM B(&htim2, TIM_CHANNEL_3, 1000,0,1,0,false);
+#ifdef PWM_LL
+PWM R(TIM2, LL_TIM_CHANNEL_CH1, 1000,0,1,false);
+PWM G(TIM2, LL_TIM_CHANNEL_CH2, 1000,0,1,false);
+PWM B(TIM2, LL_TIM_CHANNEL_CH3, 1000,0,1,false);
 
 //setup pwm
-PWM U(&htim1, TIM_CHANNEL_3, 1000,-1,1,0.1,true);
-PWM V(&htim1, TIM_CHANNEL_2, 1000,-1,1,0.1,true);
-PWM W(&htim1, TIM_CHANNEL_1, 1000,-1,1,0.1,true);
+PWM U(TIM1, LL_TIM_CHANNEL_CH3, 950,-1,1,true);
+PWM V(TIM1, LL_TIM_CHANNEL_CH2, 950,-1,1,true);
+PWM W(TIM1, LL_TIM_CHANNEL_CH1, 950,-1,1,true);
+#else
+PWM R(&htim2, TIM_CHANNEL_1, 1000,0,1,false);
+PWM G(&htim2, TIM_CHANNEL_2, 1000,0,1,false);
+PWM B(&htim2, TIM_CHANNEL_3, 1000,0,1,false);
 
+//setup pwm
+PWM U(&htim1, TIM_CHANNEL_3, 950,-1,1,true);
+PWM V(&htim1, TIM_CHANNEL_2, 950,-1,1,true);
+PWM W(&htim1, TIM_CHANNEL_1, 950,-1,1,true);
+#endif
 DRIVER driver(U,V,W,MD_EN_GPIO_Port,MD_EN_Pin);
 
-ADC adc(&hadc1,&hadc2,3.3/(0.05*4096.0),11.0/4096.0*3.3);
+ADC_DMA adc1_dma(ADC1,DMA1,LL_DMA_CHANNEL_1,(int)ADC_data::adc1_n);
+ADC_DMA adc2_dma(ADC1,DMA1,LL_DMA_CHANNEL_2,(int)ADC_data::adc1_n);
+ANALOG_SENS analog(adc1_dma,adc2_dma,3.3/(0.05*4096.0),11.0/4096.0*3.3);
 
 AS5600 as5600_enc(&hi2c1);
-AB_LINER ab_liner_enc(adc);
+AB_LINER ab_liner_enc(analog);
 ENCODER enc(7,as5600_enc,ab_liner_enc);
 
-MOTOR motor(driver,adc,enc);
+MOTOR motor(driver,analog,enc);
 
 CAN_COM can(&hcan,CAN_FILTER_FIFO0);
 
@@ -164,6 +176,7 @@ int main(void)
   HAL_TIM_Base_Start(&htim17); //for measure L
   motor.set_kv(1000*7);
   motor.init();
+  printf("int timers start\r\n");
   //encoder timer start
   HAL_TIM_Base_Start_IT(&htim6);
   //motor contorl timer start

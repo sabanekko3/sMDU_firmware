@@ -12,13 +12,13 @@
 #include "driver.hpp"
 #include "pwm.hpp"
 #include "motor_math.hpp"
-#include "adc.hpp"
+#include "analog_sens.hpp"
 #include "encoder.hpp"
 
 class MOTOR : motor_math{
 private:
 	DRIVER &driver;
-	ADC &adc;
+	ANALOG_SENS &analog;
 	ENCODER &enc;
 
 	//motor electrical angle
@@ -59,8 +59,8 @@ private:
 	int32_t angle_diff = 0;
 
 public:
-	MOTOR(DRIVER &_driver,ADC &_adc,ENCODER &_enc)
-		:driver(_driver),adc(_adc),enc(_enc),
+	MOTOR(DRIVER &_driver,ANALOG_SENS &_analog,ENCODER &_enc)
+		:driver(_driver),analog(_analog),enc(_enc),
 		 pid_d(false,TIM7_FRQ),pid_q(false,TIM7_FRQ),
 		 pid_speed(false,TIM7_FRQ),speed_filter(10){
 	}

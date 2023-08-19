@@ -10,6 +10,43 @@
 
 #include "board_data.hpp"
 
+//#define PWM_LL
+
+#ifdef PWM_LL
+class PWM{
+private:
+	TIM_TypeDef *tim;
+	const uint32_t ch;
+	const uint32_t tim_period;
+	const float min;
+	const float max;
+	const bool polarity_inv;
+	float diff_inv;
+
+public:
+	PWM(TIM_TypeDef *_tim,uint32_t _ch,uint32_t _tim_period,float _min,float _max,bool _polarity_inv)
+		: tim(_tim),ch(_ch),tim_period(_tim_period),min(_min),max(_max),polarity_inv(_polarity_inv){
+		diff_inv = 1/(max - min);
+	}
+
+	void out(float val);//-1~1
+
+
+	uint32_t get_compare(void);
+	void set_compare(uint32_t comp_val);
+
+	//inline functions
+	void start(void){
+		LL_TIM_CC_EnableChannel(tim,ch);
+		set_compare(0);
+	}
+	void stop(void){
+		LL_TIM_CC_DisableChannel(tim,ch);
+		set_compare(0);
+	}
+};
+#else
+
 class PWM{
 private:
 	TIM_HandleTypeDef *tim;
@@ -17,13 +54,12 @@ private:
 	const uint32_t tim_period;
 	const float min;
 	const float max;
-	const float margin;
 	const bool polarity_inv;
 	float diff_inv;
 
 public:
-	PWM(TIM_HandleTypeDef *_tim,uint32_t _ch,uint32_t _tim_period,float _min,float _max, float _margin,bool _polarity_inv)
-		: tim(_tim),ch(_ch),tim_period(_tim_period),min(_min),max(_max),margin(_margin),polarity_inv(_polarity_inv){
+	PWM(TIM_HandleTypeDef *_tim,uint32_t _ch,uint32_t _tim_period,float _min,float _max,bool _polarity_inv)
+		: tim(_tim),ch(_ch),tim_period(_tim_period),min(_min),max(_max),polarity_inv(_polarity_inv){
 		diff_inv = 1/(max - min);
 	}
 
@@ -42,6 +78,10 @@ public:
 		__HAL_TIM_SET_COMPARE(tim, ch,0);
 	}
 };
+#endif
+
+
+
 
 #endif
 

@@ -6,56 +6,23 @@
  */
 #include "adc.hpp"
 
-void ADC::init(void){
-	dma_start();
-	HAL_Delay(100);
-	for(uint8_t i = 0; i < 16; i++){
-		for(uint8_t j = 0; j < (int)ADC_data::n; j++){
-			adc_init[j] += adc_dma[j];
-		}
-		HAL_Delay(1);
-	}
-	for(uint8_t i = 0; i < (int)ADC_data::n; i++){
-		adc_init[i] /= 16;
-	}
+void ADC_DMA::start(uint16_t *data){
+	//LL_DMA_EnableIT_TC(dma, dma_ch);
+	LL_ADC_Enable(adc);
+
+	LL_DMA_DisableChannel(dma,dma_ch);
+
+	LL_DMA_ConfigAddresses(dma, dma_ch,
+		                 LL_ADC_DMA_GetRegAddr(adc, LL_ADC_DMA_REG_REGULAR_DATA),
+		                 (uint32_t)&data, LL_DMA_DIRECTION_PERIPH_TO_MEMORY);
+
+
+	LL_DMA_SetDataLength(dma, dma_ch, data_n);
+
+	LL_DMA_EnableChannel(dma,dma_ch);
+
+	LL_ADC_REG_StartConversion(adc);
 }
-
-//#define HPF_ACTIVE
-
-uvw_t ADC::get_i_uvw(void){
-	uvw_t i;
-	i.u = -(adc_dma[(int)ADC_data::U_I] - adc_init[(int)ADC_data::U_I]) * i_gain;
-	i.v = -(adc_dma[(int)ADC_data::V_I] - adc_init[(int)ADC_data::V_I]) * i_gain;
-	i.w = -(adc_dma[(int)ADC_data::W_I] - adc_init[(int)ADC_data::W_I]) * i_gain;
-	i.v = -i.w-i.u;
-	//i.v = -i.w-i.u;
-//	int data_state = (i.u>0?0:0b100) + (i.v>0?0:0b10) + (i.w>0?0:0b1);
-//	switch (data_state) {
-//	case 0b011:
-//		i.u = -i.v - i.w;
-//	    break;
-//	case 0b101:
-//	    i.v = -i.u - i.w;
-//	    break;
-//	case 0b110:
-//		i.w = -i.u - i.v;
-//	    break;
-//	default:
-//	    break;
-//	}
-	return i;
-}
-
-float ADC::get_power_v(void){
-	return (float)adc_dma[(int)ADC_data::POWER_V]*v_gain;
-}
-
-void ADC::dma_start(void){
-	HAL_ADC_Start_DMA(adc1, (uint32_t*) &adc_dma[(int)ADC_data::V_I], (int)ADC_data::adc1_n);
-	HAL_ADC_Start_DMA(adc2, (uint32_t*) &adc_dma[(int)ADC_data::W_I], (int)ADC_data::adc2_n);
-}
-
-void ADC::dma_stop(void){
-	HAL_ADC_Stop_DMA(adc1);
-	HAL_ADC_Stop_DMA(adc2);
+void ADC_DMA::stop(void){
+	LL_DMA_DisableChannel(dma,dma_ch);
 }

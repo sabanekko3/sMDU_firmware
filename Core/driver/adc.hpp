@@ -11,46 +11,28 @@
 #include "board_data.hpp"
 #include "motor_math.hpp"
 
-enum class ADC_data{
-	//adc1
-	V_I,
-	RBM_H2,
-	//adc2
-	W_I,
-	U_I,
-	POWER_V,
-	RBM_H1,
-	n,
-
-	adc1_n = 2,
-	adc2_n = 4
-};
-
-class ADC{
+class ADC_DMA{
 private:
-	ADC_HandleTypeDef *adc1;
-	ADC_HandleTypeDef *adc2;
-	const float i_gain;
-	const float v_gain;
-	uint16_t adc_init[(int)ADC_data::n] = {0};
-	uint16_t adc_dma[(int)ADC_data::n] = {0};
+	static constexpr uint32_t DATA_MAX = 8;
+	ADC_TypeDef *adc;
+	DMA_TypeDef *dma;
+	const uint32_t dma_ch;
+	const uint32_t data_n;
+	uint16_t *data;
+
 public:
-	ADC(ADC_HandleTypeDef *_adc1,ADC_HandleTypeDef *_adc2,float _i_gain,float _v_gain)
-		:adc1(_adc1),adc2(_adc2),i_gain(_i_gain),v_gain(_v_gain){}
+	ADC_DMA(ADC_TypeDef *_adc,DMA_TypeDef *_dma,uint32_t _dma_ch,uint32_t _data_n):
+		adc(_adc),dma(_dma),dma_ch(_dma_ch),data_n(_data_n){
 
-	void init(void);
-	uvw_t get_i_uvw(void);
-
-	float get_power_v(void);
-
-	void dma_start(void);
-	void dma_stop(void);
-
-	//inline functions
-	template<typename T>
-	uint16_t get_raw(T d){
-		return adc_dma[(int)d];
+		for(int i=0; i<DATA_MAX;i++){
+			data[i]=0;
+		}
 	}
+
+	void start(uint16_t *data);
+	void stop(void);
+
+
 };
 
 

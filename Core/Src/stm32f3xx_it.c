@@ -57,6 +57,10 @@
 
 /* External variables --------------------------------------------------------*/
 extern CAN_HandleTypeDef hcan;
+extern I2C_HandleTypeDef hi2c1;
+extern TIM_HandleTypeDef htim6;
+extern TIM_HandleTypeDef htim7;
+extern UART_HandleTypeDef huart1;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -205,7 +209,7 @@ void SysTick_Handler(void)
 void DMA1_Channel1_IRQHandler(void)
 {
   /* USER CODE BEGIN DMA1_Channel1_IRQn 0 */
-
+	LL_ADC_ClearFlag_EOS(ADC1);
   /* USER CODE END DMA1_Channel1_IRQn 0 */
 
   /* USER CODE BEGIN DMA1_Channel1_IRQn 1 */
@@ -219,7 +223,7 @@ void DMA1_Channel1_IRQHandler(void)
 void DMA1_Channel2_IRQHandler(void)
 {
   /* USER CODE BEGIN DMA1_Channel2_IRQn 0 */
-
+	LL_ADC_ClearFlag_EOS(ADC2);
   /* USER CODE END DMA1_Channel2_IRQn 0 */
 
   /* USER CODE BEGIN DMA1_Channel2_IRQn 1 */
@@ -249,7 +253,7 @@ void I2C1_EV_IRQHandler(void)
   /* USER CODE BEGIN I2C1_EV_IRQn 0 */
 
   /* USER CODE END I2C1_EV_IRQn 0 */
-
+  HAL_I2C_EV_IRQHandler(&hi2c1);
   /* USER CODE BEGIN I2C1_EV_IRQn 1 */
 
   /* USER CODE END I2C1_EV_IRQn 1 */
@@ -263,6 +267,7 @@ void USART1_IRQHandler(void)
   /* USER CODE BEGIN USART1_IRQn 0 */
 
   /* USER CODE END USART1_IRQn 0 */
+  HAL_UART_IRQHandler(&huart1);
   /* USER CODE BEGIN USART1_IRQn 1 */
 
   /* USER CODE END USART1_IRQn 1 */
@@ -276,7 +281,7 @@ void TIM6_DAC1_IRQHandler(void)
   /* USER CODE BEGIN TIM6_DAC1_IRQn 0 */
 
   /* USER CODE END TIM6_DAC1_IRQn 0 */
-
+  HAL_TIM_IRQHandler(&htim6);
   /* USER CODE BEGIN TIM6_DAC1_IRQn 1 */
 
   /* USER CODE END TIM6_DAC1_IRQn 1 */
@@ -290,7 +295,7 @@ void TIM7_DAC2_IRQHandler(void)
   /* USER CODE BEGIN TIM7_DAC2_IRQn 0 */
 
   /* USER CODE END TIM7_DAC2_IRQn 0 */
-
+  HAL_TIM_IRQHandler(&htim7);
   /* USER CODE BEGIN TIM7_DAC2_IRQn 1 */
 
   /* USER CODE END TIM7_DAC2_IRQn 1 */

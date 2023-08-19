@@ -20,13 +20,13 @@ void DRIVER::out(uvw_t uvw){
 
 
 void DRIVER::pwms_start(void){
-	HAL_GPIO_WritePin(en_port,en_pin,GPIO_PIN_SET);
+	LL_GPIO_SetOutputPin(en_port,en_pin);
 	pwm_u.start();
 	pwm_v.start();
 	pwm_w.start();
 }
 void DRIVER::pwms_stop(void){
-	HAL_GPIO_WritePin(en_port,en_pin,GPIO_PIN_RESET);
+	LL_GPIO_ResetOutputPin(en_port,en_pin);
 	pwm_u.stop();
 	pwm_v.stop();
 	pwm_w.stop();
